@@ -1,0 +1,291 @@
+{
+    "_default": {
+        "1": {
+            "equipment": [
+                "dumbbells",
+                "bench"
+            ],
+            "muscle_targets": [
+                "shoulder",
+                "upper body"
+            ],
+            "name": "Dumbbell Shoulder Press",
+            "sports": [],
+            "types": [
+                "strength",
+                "stability"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=qEwKCR5Htq4"
+        },
+        "10": {
+            "equipment": [
+                "none"
+            ],
+            "muscle_targets": [
+                "core",
+                "full body"
+            ],
+            "name": "Mountain Climbers",
+            "sports": [],
+            "types": [
+                "cardio",
+                "core",
+                "anaerobic"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=nmwGFXAPlE4"
+        },
+        "11": {
+            "equipment": [
+                "none"
+            ],
+            "muscle_targets": [
+                "core"
+            ],
+            "name": "Plank (60 seconds)",
+            "sports": [],
+            "types": [
+                "strength",
+                "core",
+                "stability"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=ASdvN_vmF6c"
+        },
+        "12": {
+            "equipment": [
+                "none",
+                "barbell",
+                "dumbbells"
+            ],
+            "muscle_targets": [
+                "legs",
+                "glutes",
+                "core"
+            ],
+            "name": "Squats",
+            "sports": [],
+            "types": [
+                "strength",
+                "circuit"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=ultWtk-f6iQ"
+        },
+        "13": {
+            "equipment": [
+                "none",
+                "dumbbells"
+            ],
+            "muscle_targets": [
+                "legs",
+                "glutes"
+            ],
+            "name": "Lunges",
+            "sports": [],
+            "types": [
+                "strength",
+                "circuit"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=QO8_l7Vl_sA"
+        },
+        "14": {
+            "equipment": [
+                "running shoes"
+            ],
+            "muscle_targets": [
+                "legs",
+                "full body"
+            ],
+            "name": "Running (30 minutes)",
+            "sports": [
+                "running"
+            ],
+            "types": [
+                "cardio"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=9Lw7yK8Sg-g"
+        },
+        "15": {
+            "equipment": [
+                "bicycle"
+            ],
+            "muscle_targets": [
+                "legs",
+                "glutes"
+            ],
+            "name": "Cycling (45 minutes)",
+            "sports": [
+                "biking"
+            ],
+            "types": [
+                "cardio"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=0kG7R8_Xm5M"
+        },
+        "16": {
+            "equipment": [
+                "yoga mat"
+            ],
+            "muscle_targets": [
+                "full body"
+            ],
+            "name": "Yoga Flow (30 minutes)",
+            "sports": [
+                "yoga"
+            ],
+            "types": [
+                "recovery",
+                "flexibility"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=eLwL-P9d4Xo"
+        },
+        "17": {
+            "equipment": [
+                "foam roller"
+            ],
+            "muscle_targets": [
+                "full body"
+            ],
+            "name": "Foam Rolling (15 minutes)",
+            "sports": [],
+            "types": [
+                "recovery"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=yYJ4hYgD4F8"
+        },
+        "2": {
+            "equipment": [
+                "cable machine",
+                "rope attachment"
+            ],
+            "muscle_targets": [
+                "shoulder",
+                "upper back"
+            ],
+            "name": "Face Pulls",
+            "sports": [],
+            "types": [
+                "strength",
+                "recovery",
+                "stability"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=rep-R7K4s2o"
+        },
+        "3": {
+            "equipment": [
+                "dumbbells"
+            ],
+            "muscle_targets": [
+                "shoulder"
+            ],
+            "name": "Lateral Raises (Shoulder Abduction)",
+            "sports": [],
+            "types": [
+                "strength",
+                "recovery"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=3VcKaXAYSzg"
+        },
+        "4": {
+            "equipment": [
+                "none"
+            ],
+            "muscle_targets": [
+                "chest",
+                "shoulder",
+                "triceps",
+                "core"
+            ],
+            "name": "Push-ups",
+            "sports": [],
+            "types": [
+                "strength",
+                "circuit",
+                "anaerobic"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=IODxDxX7Hsc"
+        },
+        "5": {
+            "equipment": [
+                "pool"
+            ],
+            "muscle_targets": [
+                "full body"
+            ],
+            "name": "Freestyle Swimming (200m)",
+            "sports": [
+                "swimming"
+            ],
+            "types": [
+                "cardio"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=rJ7F7lEw2K0"
+        },
+        "6": {
+            "equipment": [
+                "pool",
+                "paddles",
+                "pull buoy"
+            ],
+            "muscle_targets": [
+                "upper body",
+                "core"
+            ],
+            "name": "Freestyle Pull (200m)",
+            "sports": [
+                "swimming"
+            ],
+            "types": [
+                "strength",
+                "swimming"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=wX-y4o3oN4k"
+        },
+        "7": {
+            "equipment": [
+                "pool"
+            ],
+            "muscle_targets": [
+                "full body"
+            ],
+            "name": "Medley Order (12 x 50m)",
+            "sports": [
+                "swimming"
+            ],
+            "types": [
+                "cardio",
+                "strength",
+                "swimming"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=qB_p_lqfL1g"
+        },
+        "8": {
+            "equipment": [
+                "none"
+            ],
+            "muscle_targets": [
+                "core"
+            ],
+            "name": "Sit-ups",
+            "sports": [],
+            "types": [
+                "strength",
+                "core"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=J9f2pPjK4cQ"
+        },
+        "9": {
+            "equipment": [
+                "none"
+            ],
+            "muscle_targets": [
+                "core"
+            ],
+            "name": "Crunches",
+            "sports": [],
+            "types": [
+                "strength",
+                "core"
+            ],
+            "youtube_link": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
+        }
+    }
+}
