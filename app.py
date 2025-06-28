@@ -50,7 +50,7 @@ if not db.all():
             "name": "Push-ups",
             "types": ["strength", "circuit", "anaerobic"],
             "sports": [],
-            "muscle_targets": ["chest", "shoulders", "triceps", "core"],
+            "muscle_targets": ["chest", "shoulder", "triceps", "core"],
             "equipment": ["none"],
             "youtube_link": "https://www.youtube.com/watch?v=IODxDxX7Hsc"
         },
@@ -188,61 +188,64 @@ def generate_workout():
 
     # Create a TinyDB Query object
     Exercise = Query()
+    
+    # This list will hold the combined conditions for each active category (types, sports, muscles)
+    all_conditions = [] 
 
-    # Build the query dynamically based on selected attributes
-    query_conditions = []
-
-    # Add conditions for exercise types
+    # Build OR'd condition for exercise types
+    type_query = None
     if selected_types:
-        type_conditions = [Exercise.types.any(t) for t in selected_types]
-        query_conditions.append(type_conditions[0])
-        for cond in type_conditions[1:]:
-            query_conditions[0] = query_conditions[0] | cond
+        for t in selected_types:
+            if type_query is None:
+                type_query = Exercise.types.any(t)
+            else:
+                type_query |= Exercise.types.any(t) # Use |= for ORing TinyDB queries
+        if type_query: # Add only if there are types selected
+            all_conditions.append(type_query)
 
-    # Add conditions for sports
+    # Build OR'd condition for sports
+    sport_query = None
     if selected_sports:
-        sport_conditions = [Exercise.sports.any(s) for s in selected_sports]
-        if query_conditions:
-            sport_combined = sport_conditions[0]
-            for cond in sport_conditions[1:]:
-                sport_combined = sport_combined | cond
-            query_conditions[0] = query_conditions[0] & sport_combined
-        else:
-            query_conditions.append(sport_conditions[0])
-            for cond in sport_conditions[1:]:
-                query_conditions[0] = query_conditions[0] | cond
+        for s in selected_sports:
+            if sport_query is None:
+                sport_query = Exercise.sports.any(s)
+            else:
+                sport_query |= Exercise.sports.any(s)
+        if sport_query: # Add only if there are sports selected
+            all_conditions.append(sport_query)
 
-    # Add conditions for muscle targets
+    # Build OR'd condition for muscle targets
+    muscle_query = None
     if selected_muscle_targets:
-        muscle_conditions = [Exercise.muscle_targets.any(m) for m in selected_muscle_targets]
-        if query_conditions:
-            muscle_combined = muscle_conditions[0]
-            for cond in muscle_conditions[1:]:
-                muscle_combined = muscle_combined | cond
-            query_conditions[0] = query_conditions[0] & muscle_combined
-        else:
-            query_conditions.append(muscle_conditions[0])
-            for cond in muscle_conditions[1:]:
-                query_conditions[0] = query_conditions[0] | cond
+        for m in selected_muscle_targets:
+            if muscle_query is None:
+                muscle_query = Exercise.muscle_targets.any(m)
+            else:
+                muscle_query |= Exercise.muscle_targets.any(m)
+        if muscle_query: # Add only if there are muscle targets selected
+            all_conditions.append(muscle_query)
 
-    # Combine all query conditions with a logical AND
-    final_query = None
-    if query_conditions:
-        final_query = query_conditions[0]
-        for cond in query_conditions[1:]:
-            final_query = final_query & cond
-
-    # Perform the search
-    if final_query:
-        matching_exercises = db.search(final_query)
-    else:
-        # If no attributes are selected, return a message or a default set of exercises
+    # If no attributes are selected, return a message
+    if not all_conditions:
         return jsonify({"workout_plan": [], "message": "Please select at least one attribute to generate a workout."})
 
+    # Combine all individual category conditions with a logical AND
+    # Initialize final_query with the first condition
+    final_query = all_conditions[0] 
+    # AND the remaining conditions
+    for cond in all_conditions[1:]:
+        final_query &= cond # Use &= for ANDing TinyDB queries
+
+    # Perform the search
+    matching_exercises = db.search(final_query)
+
     # If too many exercises are found, select a random subset
-    # Otherwise, use all found exercises
     num_exercises_to_select = min(len(matching_exercises), 5) # Max 5 exercises for a workout plan
-    workout_plan = random.sample(matching_exercises, num_exercises_to_select)
+    
+    if num_exercises_to_select > 0:
+        workout_plan = random.sample(matching_exercises, num_exercises_to_select)
+    else:
+        workout_plan = [] # No exercises to sample if num_exercises_to_select is 0
 
     if not workout_plan:
         return jsonify({"workout_plan": [], "message": "No exercises found matching your criteria. Try different selections!"})
