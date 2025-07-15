@@ -1,174 +1,189 @@
-# app.py - Flask Backend for Workout Wizard
+# app.py
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request, jsonify
 from tinydb import TinyDB, Query
 import os
 import random
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Define the database path
-DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db')
-DB_PATH = os.path.join(DB_DIR, 'workout_db.json')
+# --- TinyDB Configuration ---
+# Get the TinyDB path from an environment variable,
+# default to a local path for development.
+# IMPORTANT: This path MUST match the mounted Azure File Share path on Azure.
+# Example for Azure: /home/site/wwwroot/data/workout_db.json
+DB_PATH = os.environ.get('TINYDB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'workout_db.json'))
 
-# Ensure the database directory exists
-os.makedirs(DB_DIR, exist_ok=True)
+# Ensure the directory for the DB file exists if it's a local path
+# For Azure File Share, the mount point itself should exist, but not necessarily its parent dirs
+# os.makedirs(os.path.dirname(DB_PATH), exist_ok=True) is not strictly needed for a mounted share
+# but good for local dev.
+if not os.path.exists(os.path.dirname(DB_PATH)):
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-# Initialize TinyDB
 db = TinyDB(DB_PATH)
 
-# Check if the database is empty and populate it with initial data if needed
-if not db.all():
-    print("Populating TinyDB with initial data...")
-    db.insert_multiple([
-        {
-            "name": "Dumbbell Shoulder Press",
-            "types": ["strength", "stability"],
-            "sports": [],
-            "muscle_targets": ["shoulder", "upper body"],
-            "equipment": ["dumbbells", "bench"],
-            "youtube_link": "https://www.youtube.com/watch?v=qEwKCR5Htq4"
-        },
-        {
-            "name": "Face Pulls",
-            "types": ["strength", "recovery", "stability"],
-            "sports": [],
-            "muscle_targets": ["shoulder", "upper back"],
-            "equipment": ["cable machine", "rope attachment"],
-            "youtube_link": "https://www.youtube.com/watch?v=rep-R7K4s2o"
-        },
-        {
-            "name": "Lateral Raises (Shoulder Abduction)",
-            "types": ["strength", "recovery"],
-            "sports": [],
-            "muscle_targets": ["shoulder"],
-            "equipment": ["dumbbells"],
-            "youtube_link": "https://www.youtube.com/watch?v=3VcKaXAYSzg"
-        },
-        {
-            "name": "Push-ups",
-            "types": ["strength", "circuit", "anaerobic"],
-            "sports": [],
-            "muscle_targets": ["chest", "shoulder", "triceps", "core"],
-            "equipment": ["none"],
-            "youtube_link": "https://www.youtube.com/watch?v=IODxDxX7Hsc"
-        },
-        {
-            "name": "Freestyle Swimming (200m)",
-            "types": ["cardio"],
-            "sports": ["swimming"],
-            "muscle_targets": ["full body"],
-            "equipment": ["pool"],
-            "youtube_link": "https://www.youtube.com/watch?v=rJ7F7lEw2K0"
-        },
-        {
-            "name": "Freestyle Pull (200m)",
-            "types": ["strength", "swimming"],
-            "sports": ["swimming"],
-            "muscle_targets": ["upper body", "core"],
-            "equipment": ["pool", "paddles", "pull buoy"],
-            "youtube_link": "https://www.youtube.com/watch?v=wX-y4o3oN4k"
-        },
-        {
-            "name": "Medley Order (12 x 50m)",
-            "types": ["cardio", "strength", "swimming"],
-            "sports": ["swimming"],
-            "muscle_targets": ["full body"],
-            "equipment": ["pool"],
-            "youtube_link": "https://www.youtube.com/watch?v=qB_p_lqfL1g"
-        },
-        {
-            "name": "Sit-ups",
-            "types": ["strength", "core"],
-            "sports": [],
-            "muscle_targets": ["core"],
-            "equipment": ["none"],
-            "youtube_link": "https://www.youtube.com/watch?v=J9f2pPjK4cQ"
-        },
-        {
-            "name": "Crunches",
-            "types": ["strength", "core"],
-            "sports": [],
-            "muscle_targets": ["core"],
-            "equipment": ["none"],
-            "youtube_link": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
-        },
-        {
-            "name": "Mountain Climbers",
-            "types": ["cardio", "core", "anaerobic"],
-            "sports": [],
-            "muscle_targets": ["core", "full body"],
-            "equipment": ["none"],
-            "youtube_link": "https://www.youtube.com/watch?v=nmwGFXAPlE4"
-        },
-        {
-            "name": "Plank (60 seconds)",
-            "types": ["strength", "core", "stability"],
-            "sports": [],
-            "muscle_targets": ["core"],
-            "equipment": ["none"],
-            "youtube_link": "https://www.youtube.com/watch?v=ASdvN_vmF6c"
-        },
-        {
-            "name": "Squats",
-            "types": ["strength", "circuit"],
-            "sports": [],
-            "muscle_targets": ["legs", "glutes", "core"],
-            "equipment": ["none", "barbell", "dumbbells"],
-            "youtube_link": "https://www.youtube.com/watch?v=ultWtk-f6iQ"
-        },
-        {
-            "name": "Lunges",
-            "types": ["strength", "circuit"],
-            "sports": [],
-            "muscle_targets": ["legs", "glutes"],
-            "equipment": ["none", "dumbbells"],
-            "youtube_link": "https://www.youtube.com/watch?v=QO8_l7Vl_sA"
-        },
-        {
-            "name": "Running (30 minutes)",
-            "types": ["cardio"],
-            "sports": ["running"],
-            "muscle_targets": ["legs", "full body"],
-            "equipment": ["running shoes"],
-            "youtube_link": "https://www.youtube.com/watch?v=9Lw7yK8Sg-g"
-        },
-        {
-            "name": "Cycling (45 minutes)",
-            "types": ["cardio"],
-            "sports": ["biking"],
-            "muscle_targets": ["legs", "glutes"],
-            "equipment": ["bicycle"],
-            "youtube_link": "https://www.youtube.com/watch?v=0kG7R8_Xm5M"
-        },
-        {
-            "name": "Yoga Flow (30 minutes)",
-            "types": ["recovery", "flexibility"],
-            "sports": ["yoga"],
-            "muscle_targets": ["full body"],
-            "equipment": ["yoga mat"],
-            "youtube_link": "https://www.youtube.com/watch?v=eLwL-P9d4Xo"
-        },
-        {
-            "name": "Foam Rolling (15 minutes)",
-            "types": ["recovery"],
-            "sports": [],
-            "muscle_targets": ["full body"],
-            "equipment": ["foam roller"],
-            "youtube_link": "https://www.youtube.com/watch?v=yYJ4hYgD4F8"
-        }
-    ])
-    print("Database populated.")
+# --- Initial Data Population Logic (Crucial for TinyDB on persistent storage) ---
+# This logic will run on every app startup.
+# It checks if the database is empty and populates it if so.
+# This ensures data exists on the *persistent* storage even after redeployments.
 
-# Define the allowed exercise attributes
-EXERCISE_TYPES = ["cardio", "strength", "circuit", "anaerobic", "recovery", "stability", "flexibility", "core"]
-SPORTS = ["running", "swimming", "biking", "tennis", "yoga"]
-MUSCLE_TARGETS = ["shoulder", "back", "calves", "legs", "chest", "triceps", "biceps", "glutes", "core", "upper body", "full body", "upper back"]
+# Define your exercise data as a Python list of dictionaries
+INITIAL_EXERCISE_DATA = [
+    {
+        "name": "Dumbbell Shoulder Press",
+        "types": ["strength", "stability"],
+        "sports": [],
+        "muscle_targets": ["shoulder", "upper body"],
+        "equipment": ["dumbbells", "bench"],
+        "youtube_link": "https://www.youtube.com/watch?v=qEwKCR5Htq4"
+    },
+    {
+        "name": "Face Pulls",
+        "types": ["strength", "recovery", "stability"],
+        "sports": [],
+        "muscle_targets": ["shoulder", "upper back"],
+        "equipment": ["cable machine", "rope attachment"],
+        "youtube_link": "https://www.youtube.com/watch?v=rep-R7K4s2o"
+    },
+    {
+        "name": "Lateral Raises (Shoulder Abduction)",
+        "types": ["strength", "recovery"],
+        "sports": [],
+        "muscle_targets": ["shoulder"],
+        "equipment": ["dumbbells"],
+        "youtube_link": "https://www.youtube.com/watch?v=3VcKaXAYSzg"
+    },
+    {
+        "name": "Push-ups",
+        "types": ["strength", "circuit", "anaerobic"],
+        "sports": [],
+        "muscle_targets": ["chest", "shoulder", "triceps", "core"],
+        "equipment": ["none"],
+        "youtube_link": "https://www.youtube.com/watch?v=IODxDxX7Hsc"
+    },
+    {
+        "name": "Freestyle Swimming (200m)",
+        "types": ["cardio"],
+        "sports": ["swimming"],
+        "muscle_targets": ["full body"],
+        "equipment": ["pool"],
+        "youtube_link": "https://www.youtube.com/watch?v=rJ7F7lEw2K0"
+    },
+    {
+        "name": "Freestyle Pull (200m)",
+        "types": ["strength", "swimming"],
+        "sports": ["swimming"],
+        "muscle_targets": ["upper body", "core"],
+        "equipment": ["pool", "paddles", "pull buoy"],
+        "youtube_link": "https://www.youtube.com/watch?v=wX-y4o3oN4k"
+    },
+    {
+        "name": "Medley Order (12 x 50m)",
+        "types": ["cardio", "strength", "swimming"],
+        "sports": ["swimming"],
+        "muscle_targets": ["full body"],
+        "equipment": ["pool"],
+        "youtube_link": "https://www.youtube.com/watch?v=qB_p_lqfL1g"
+    },
+    {
+        "name": "Sit-ups",
+        "types": ["strength", "core"],
+        "sports": [],
+        "muscle_targets": ["core"],
+        "equipment": ["none"],
+        "youtube_link": "https://www.youtube.com/watch?v=J9f2pPjK4cQ"
+    },
+    {
+        "name": "Crunches",
+        "types": ["strength", "core"],
+        "sports": [],
+        "muscle_targets": ["core"],
+        "equipment": ["none"],
+        "youtube_link": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
+    },
+    {
+        "name": "Mountain Climbers",
+        "types": ["cardio", "core", "anaerobic"],
+        "sports": [],
+        "muscle_targets": ["core", "full body"],
+        "equipment": ["none"],
+        "youtube_link": "https://www.youtube.com/watch?v=nmwGFXAPlE4"
+    },
+    {
+        "name": "Plank (60 seconds)",
+        "types": ["strength", "core", "stability"],
+        "sports": [],
+        "muscle_targets": ["core"],
+        "equipment": ["none"],
+        "youtube_link": "https://www.youtube.com/watch?v=ASdvN_vmF6c"
+    },
+    {
+        "name": "Squats",
+        "types": ["strength", "circuit"],
+        "sports": [],
+        "muscle_targets": ["legs", "glutes", "core"],
+        "equipment": ["none", "barbell", "dumbbells"],
+        "youtube_link": "https://www.youtube.com/watch?v=ultWtk-f6iQ"
+    },
+    {
+        "name": "Lunges",
+        "types": ["strength", "circuit"],
+        "sports": [],
+        "muscle_targets": ["legs", "glutes"],
+        "equipment": ["none", "dumbbells"],
+        "youtube_link": "https://www.youtube.com/watch?v=QO8_l7Vl_sA"
+    },
+    {
+        "name": "Running (30 minutes)",
+        "types": ["cardio"],
+        "sports": ["running"],
+        "muscle_targets": ["legs", "full body"],
+        "equipment": ["running shoes"],
+        "youtube_link": "https://www.youtube.com/watch?v=9Lw7yK8Sg-g"
+    },
+    {
+        "name": "Cycling (45 minutes)",
+        "types": ["cardio"],
+        "sports": ["biking"],
+        "muscle_targets": ["legs", "glutes"],
+        "equipment": ["bicycle"],
+        "youtube_link": "https://www.youtube.com/watch?v=0kG7R8_Xm5M"
+    },
+    {
+        "name": "Yoga Flow (30 minutes)",
+        "types": ["recovery", "flexibility"],
+        "sports": ["yoga"],
+        "muscle_targets": ["full body"],
+        "equipment": ["yoga mat"],
+        "youtube_link": "https://www.youtube.com/watch?v=eLwL-P9d4Xo"
+    },
+    {
+        "name": "Foam Rolling (15 minutes)",
+        "types": ["recovery"],
+        "sports": [],
+        "muscle_targets": ["full body"],
+        "equipment": ["foam roller"],
+        "youtube_link": "https://www.youtube.com/watch?v=yYJ4hYgD4F8"
+    }
+]
+
+# Populate database only if it's empty
+if len(db) == 0:
+    print("Database is empty, populating with initial data...")
+    db.insert_multiple(INITIAL_EXERCISE_DATA)
+    print("Initial data population complete.")
+else:
+    print("Database already contains data, skipping initial population.")
+
+
+EXERCISE_TYPES = ["strength", "cardio", "recovery", "stability", "circuit", "anaerobic", "flexibility"]
+SPORTS = ["swimming", "running", "biking", "yoga"]
+MUSCLE_TARGETS = ["shoulder", "upper body", "upper back", "chest", "triceps", "core", "full body", "legs", "glutes"]
+
 
 @app.route('/')
 def index():
-    """Renders the main index.html page."""
     return render_template('index.html',
                            exercise_types=EXERCISE_TYPES,
                            sports=SPORTS,
@@ -176,21 +191,13 @@ def index():
 
 @app.route('/generate_workout', methods=['POST'])
 def generate_workout():
-    """
-    Generates a workout plan based on user-selected attributes.
-    Expects a JSON payload with 'selected_types', 'selected_sports',
-    and 'selected_muscle_targets'.
-    """
     data = request.get_json()
     selected_types = data.get('selected_types', [])
     selected_sports = data.get('selected_sports', [])
     selected_muscle_targets = data.get('selected_muscle_targets', [])
 
-    # Create a TinyDB Query object
     Exercise = Query()
-    
-    # This list will hold the combined conditions for each active category (types, sports, muscles)
-    all_conditions = [] 
+    all_conditions = []
 
     # Build OR'd condition for exercise types
     type_query = None
@@ -199,8 +206,8 @@ def generate_workout():
             if type_query is None:
                 type_query = Exercise.types.any(t)
             else:
-                type_query |= Exercise.types.any(t) # Use |= for ORing TinyDB queries
-        if type_query: # Add only if there are types selected
+                type_query |= Exercise.types.any(t)
+        if type_query:
             all_conditions.append(type_query)
 
     # Build OR'd condition for sports
@@ -211,7 +218,7 @@ def generate_workout():
                 sport_query = Exercise.sports.any(s)
             else:
                 sport_query |= Exercise.sports.any(s)
-        if sport_query: # Add only if there are sports selected
+        if sport_query:
             all_conditions.append(sport_query)
 
     # Build OR'd condition for muscle targets
@@ -222,7 +229,7 @@ def generate_workout():
                 muscle_query = Exercise.muscle_targets.any(m)
             else:
                 muscle_query |= Exercise.muscle_targets.any(m)
-        if muscle_query: # Add only if there are muscle targets selected
+        if muscle_query:
             all_conditions.append(muscle_query)
 
     # If no attributes are selected, return a message
@@ -230,33 +237,27 @@ def generate_workout():
         return jsonify({"workout_plan": [], "message": "Please select at least one attribute to generate a workout."})
 
     # Combine all individual category conditions with a logical AND
-    # Initialize final_query with the first condition
-    final_query = all_conditions[0] 
-    # AND the remaining conditions
+    final_query = all_conditions[0]
     for cond in all_conditions[1:]:
-        final_query &= cond # Use &= for ANDing TinyDB queries
+        final_query &= cond
 
     # Perform the search
     matching_exercises = db.search(final_query)
 
     # If too many exercises are found, select a random subset
-    num_exercises_to_select = min(len(matching_exercises), 5) # Max 5 exercises for a workout plan
-    
+    num_exercises_to_select = min(len(matching_exercises), 5)
+
     if num_exercises_to_select > 0:
         workout_plan = random.sample(matching_exercises, num_exercises_to_select)
     else:
-        workout_plan = [] # No exercises to sample if num_exercises_to_select is 0
+        workout_plan = []
 
     if not workout_plan:
         return jsonify({"workout_plan": [], "message": "No exercises found matching your criteria. Try different selections!"})
 
     return jsonify({"workout_plan": workout_plan})
 
-# To run the Flask app:
-# 1. Save this code as `app.py`.
-# 2. Make sure you have Flask and TinyDB installed: `pip install Flask TinyDB`
-# 3. Run from your terminal: `python app.py`
-#    (Or `flask run` if your Flask environment is set up)
-# The app will be available at http://127.0.0.1:5000/
 if __name__ == '__main__':
+    # When running locally, the DB_PATH will be a local file.
+    # The initial population logic above handles seeding.
     app.run(debug=True)
