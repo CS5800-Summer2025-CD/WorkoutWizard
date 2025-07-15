@@ -79,15 +79,5 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }} # Use the environment variable
           slot-name: 'Production'
-          # publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3BD9CF882EF244D3B98AB2C1D8D6FFF7 }}
-          # OR use OpenID Connect (recommended):
-          # For OIDC, you would remove publish-profile and add an azure/login step before this.
-          # Example (if you switch to OIDC):
-          # - name: Azure Login
-          #   uses: azure/login@v1
-          #   with:
-          #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          # Then your deploy step would just be:
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3BD9CF882EF244D3B98AB2C1D8D6FFF7 }}
           package: ${{ github.workspace }}/deploy_artifact/deployment_package.zip # Specify the path to the zipped artifact
