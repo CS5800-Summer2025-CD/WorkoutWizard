@@ -8,19 +8,25 @@ import random
 app = Flask(__name__)
 
 # --- TinyDB Configuration ---
-# Get the TinyDB path from an environment variable,
-# default to a local path for development.
-# IMPORTANT: This path MUST match the mounted Azure File Share path on Azure.
-# Example for Azure: /home/site/wwwroot/data/workout_db.json
-DB_PATH = os.environ.get('TINYDB_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'workout_db.json'))
+# Get the base directory of the application (where app.py resides)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Ensure the directory for the DB file exists if it's a local path
-# For Azure File Share, the mount point itself should exist, but not necessarily its parent dirs
-# os.makedirs(os.path.dirname(DB_PATH), exist_ok=True) is not strictly needed for a mounted share
-# but good for local dev.
-if not os.path.exists(os.path.dirname(DB_PATH)):
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+# Define the local 'db' folder for TinyDB when running development locally
+LOCAL_DB_DIR = os.path.join(BASE_DIR, 'db')
+DEFAULT_DB_FILE_PATH = os.path.join(LOCAL_DB_DIR, 'workout_db.json')
 
+# Get the TinyDB path from an environment variable (for Azure deployment),
+# or default to the 'db' folder within the local project root for development.
+DB_PATH = os.environ.get('TINYDB_PATH', DEFAULT_DB_FILE_PATH)
+
+# Ensure the directory for the DB file exists.
+# This will create the 'db' folder if running locally and it doesn't exist.
+# For Azure, it ensures the mounted path's directory exists (though the mount itself ensures the top-level path).
+db_directory = os.path.dirname(DB_PATH)
+if not os.path.exists(db_directory):
+    os.makedirs(db_directory, exist_ok=True) # exist_ok=True prevents error if dir already exists
+
+# Initialize TinyDB with the determined path
 db = TinyDB(DB_PATH)
 
 # --- Initial Data Population Logic (Crucial for TinyDB on persistent storage) ---
@@ -170,11 +176,11 @@ INITIAL_EXERCISE_DATA = [
 
 # Populate database only if it's empty
 if len(db) == 0:
-    print("Database is empty, populating with initial data...")
+    print(f"Database is empty at {DB_PATH}, populating with initial data...")
     db.insert_multiple(INITIAL_EXERCISE_DATA)
     print("Initial data population complete.")
 else:
-    print("Database already contains data, skipping initial population.")
+    print(f"Database at {DB_PATH} already contains data, skipping initial population.")
 
 
 EXERCISE_TYPES = ["strength", "cardio", "recovery", "stability", "circuit", "anaerobic", "flexibility"]
