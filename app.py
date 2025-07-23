@@ -42,7 +42,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["shoulder", "upper body"],
         "equipment": ["dumbbells", "bench"],
-        "youtube_link": "https://www.youtube.com/watch?v=qEwKCR5Htq4"
+        "youtube_link": "https://youtu.be/B-aVuyhvLHU?si=JXXQW6Ij6fthGZP5"
     },
     {
         "name": "Face Pulls",
@@ -50,7 +50,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["shoulder", "upper back"],
         "equipment": ["cable machine", "rope attachment"],
-        "youtube_link": "https://www.youtube.com/watch?v=rep-R7K4s2o"
+        "youtube_link": "https://youtu.be/eFxMixk_qPQ?si=OnxcF7SCVh_1a1q2"
     },
     {
         "name": "Lateral Raises (Shoulder Abduction)",
@@ -58,7 +58,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["shoulder"],
         "equipment": ["dumbbells"],
-        "youtube_link": "https://www.youtube.com/watch?v=3VcKaXAYSzg"
+        "youtube_link": "https://youtu.be/4p_m96HXMLk?si=q07nzIC1f_cmYs9H"
     },
     {
         "name": "Push-ups",
@@ -66,7 +66,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["chest", "shoulder", "triceps", "core"],
         "equipment": ["none"],
-        "youtube_link": "https://www.youtube.com/watch?v=IODxDxX7Hsc"
+        "youtube_link": "https://youtu.be/_l3ySVKYVJ8?si=j1fu62ciG71MfBQ8"
     },
     {
         "name": "Freestyle Swimming (200m)",
@@ -74,7 +74,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["swimming"],
         "muscle_targets": ["full body"],
         "equipment": ["pool"],
-        "youtube_link": "https://www.youtube.com/watch?v=rJ7F7lEw2K0"
+        "youtube_link": "https://youtu.be/6_vXycbD2TM?si=FWiMkDJdHq6Deeyw"
     },
     {
         "name": "Freestyle Pull (200m)",
@@ -82,7 +82,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["swimming"],
         "muscle_targets": ["upper body", "core"],
         "equipment": ["pool", "paddles", "pull buoy"],
-        "youtube_link": "https://www.youtube.com/watch?v=wX-y4o3oN4k"
+        "youtube_link": "https://youtu.be/fcIR3D1_7w4?si=eeRsX6UHNlrmrh11"
     },
     {
         "name": "Medley Order (12 x 50m)",
@@ -90,7 +90,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["swimming"],
         "muscle_targets": ["full body"],
         "equipment": ["pool"],
-        "youtube_link": "https://www.youtube.com/watch?v=qB_p_lqfL1g"
+        "youtube_link": "https://youtu.be/qw-HPBQZlCc?si=LbRpIKFYjhKixB8Z"
     },
     {
         "name": "Sit-ups",
@@ -98,7 +98,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["core"],
         "equipment": ["none"],
-        "youtube_link": "https://www.youtube.com/watch?v=J9f2pPjK4cQ"
+        "youtube_link": "https://youtu.be/1fbU_MkV7NE?si=lvK_hhVxnbZfgOCL"
     },
     {
         "name": "Crunches",
@@ -106,7 +106,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["core"],
         "equipment": ["none"],
-        "youtube_link": "https://www.youtube.com/watch?v=Xyd_fa5zoEU"
+        "youtube_link": "https://youtu.be/Xyd_fa5zoEU?si=VXLLRCiMcsVt_2aB"
     },
     {
         "name": "Mountain Climbers",
@@ -114,7 +114,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["core", "full body"],
         "equipment": ["none"],
-        "youtube_link": "https://www.youtube.com/watch?v=nmwGFXAPlE4"
+        "youtube_link": "https://youtu.be/cnyTQDSE884?si=O2CSSXQ9kfopyngO"
     },
     {
         "name": "Plank (60 seconds)",
@@ -122,7 +122,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["core"],
         "equipment": ["none"],
-        "youtube_link": "https://www.youtube.com/watch?v=ASdvN_vmF6c"
+        "youtube_link": "https://youtu.be/ASdvN_XEl_c?si=LH9sbwGHgXvS-ncy"
     },
     {
         "name": "Squats",
@@ -130,7 +130,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["legs", "glutes", "core"],
         "equipment": ["none", "barbell", "dumbbells"],
-        "youtube_link": "https://www.youtube.com/watch?v=ultWtk-f6iQ"
+        "youtube_link": "https://youtu.be/xqvCmoLULNY?si=LrAdy9ESHbgj_g2r"
     },
     {
         "name": "Lunges",
@@ -138,7 +138,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["legs", "glutes"],
         "equipment": ["none", "dumbbells"],
-        "youtube_link": "https://www.youtube.com/watch?v=QO8_l7Vl_sA"
+        "youtube_link": "https://youtu.be/wrwwXE_x-pQ?si=QnslQ1K_1tNIfs2p"
     },
     {
         "name": "Running (30 minutes)",
@@ -146,7 +146,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["running"],
         "muscle_targets": ["legs", "full body"],
         "equipment": ["running shoes"],
-        "youtube_link": "https://www.youtube.com/watch?v=9Lw7yK8Sg-g"
+        "youtube_link": "https://youtu.be/_kGESn8ArrU?si=AjKp86Ybh-tWXHoi"
     },
     {
         "name": "Cycling (45 minutes)",
@@ -154,7 +154,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["biking"],
         "muscle_targets": ["legs", "glutes"],
         "equipment": ["bicycle"],
-        "youtube_link": "https://www.youtube.com/watch?v=0kG7R8_Xm5M"
+        "youtube_link": "https://youtu.be/lOVaNLFRLZI?si=x4nX77jtaXWa7DUD"
     },
     {
         "name": "Yoga Flow (30 minutes)",
@@ -162,7 +162,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": ["yoga"],
         "muscle_targets": ["full body"],
         "equipment": ["yoga mat"],
-        "youtube_link": "https://www.youtube.com/watch?v=eLwL-P9d4Xo"
+        "youtube_link": "https://youtu.be/djLCTwi3PmU?si=KHY2gFDWj21YNbGB"
     },
     {
         "name": "Foam Rolling (15 minutes)",
@@ -170,7 +170,7 @@ INITIAL_EXERCISE_DATA = [
         "sports": [],
         "muscle_targets": ["full body"],
         "equipment": ["foam roller"],
-        "youtube_link": "https://www.youtube.com/watch?v=yYJ4hYgD4F8"
+        "youtube_link": "https://youtu.be/c0JRlrKJXPg?si=v94jYT1-_lgCFawz"
     }
 ]
 
