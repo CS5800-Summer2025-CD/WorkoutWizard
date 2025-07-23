@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout Wizard</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -91,7 +90,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-            <!-- Exercise Types -->
             <div class="card">
                 <h2 class="section-title text-2xl font-bold mb-4 text-center">Exercise Types</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
@@ -104,7 +102,6 @@
                 </div>
             </div>
 
-            <!-- Sports -->
             <div class="card">
                 <h2 class="section-title text-2xl font-bold mb-4 text-center">Sports Specific</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
@@ -117,7 +114,6 @@
                 </div>
             </div>
 
-            <!-- Muscle Targets -->
             <div class="card">
                 <h2 class="section-title text-2xl font-bold mb-4 text-center">Muscle Targets</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
@@ -132,12 +128,14 @@
         </div>
 
         <div class="text-center mb-10">
-            <button id="generateWorkoutBtn" class="button-primary">
+            <button id="generateWorkoutBtn" class="button-primary mr-4">
                 Generate Workout
+            </button>
+            <button id="downloadWorkoutBtn" class="button-primary hidden">
+                Download Workout
             </button>
         </div>
 
-        <!-- Workout Plan Display Area -->
         <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[200px]">
             <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Generated Workout 💪</h2>
             <div id="workoutList" class="space-y-4">
@@ -147,13 +145,19 @@
     </div>
 
     <script>
+        // NEW: Global variable to store the last generated workout plan
+        let lastGeneratedWorkoutPlan = [];
+
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const selectedTypes = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const selectedSports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const selectedMuscleTargets = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
             const workoutListDiv = document.getElementById('workoutList');
+            const downloadButton = document.getElementById('downloadWorkoutBtn'); // Get the download button
+
             workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Generating workout...</p>';
+            downloadButton.classList.add('hidden'); // Hide download button while generating/if error
 
             try {
                 const response = await fetch('/generate_workout', {
@@ -172,11 +176,11 @@
 
                 if (data.message) {
                     workoutListDiv.innerHTML = `<p class="text-center text-red-500 font-semibold">${data.message}</p>`;
-                    return;
-                }
-
-                if (data.workout_plan && data.workout_plan.length > 0) {
+                    lastGeneratedWorkoutPlan = []; // Clear plan on error
+                } else if (data.workout_plan && data.workout_plan.length > 0) {
                     workoutListDiv.innerHTML = ''; // Clear previous content
+                    lastGeneratedWorkoutPlan = data.workout_plan; // Store the generated plan
+                    
                     data.workout_plan.forEach(exercise => {
                         const exerciseCard = document.createElement('div');
                         exerciseCard.className = 'card border border-blue-100 p-4 flex flex-col items-start';
@@ -195,13 +199,60 @@
                         `;
                         workoutListDiv.appendChild(exerciseCard);
                     });
+                    downloadButton.classList.remove('hidden'); // Show download button after successful workout
                 } else {
                     workoutListDiv.innerHTML = '<p class="text-center text-gray-600">No exercises found matching your criteria. Try different selections!</p>';
+                    lastGeneratedWorkoutPlan = []; // Clear plan if no exercises found
                 }
             } catch (error) {
                 console.error('Error generating workout:', error);
                 workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred while generating your workout. Please try again.</p>';
+                lastGeneratedWorkoutPlan = []; // Clear plan on error
             }
+        });
+
+        // NEW: Event listener for the download button
+        document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
+            if (lastGeneratedWorkoutPlan.length === 0) {
+                alert("Please generate a workout first!");
+                return;
+            }
+
+            let fileContent = "Workout Wizard - Generated Workout Plan\n\n";
+            lastGeneratedWorkoutPlan.forEach((exercise, index) => {
+                fileContent += `--- Exercise ${index + 1}: ${exercise.name} ---\n`;
+                fileContent += `  Types: ${exercise.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}\n`;
+                if (exercise.sports.length > 0) {
+                    fileContent += `  Sports: ${exercise.sports.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}\n`;
+                }
+                if (exercise.muscle_targets.length > 0) {
+                    fileContent += `  Muscle Targets: ${exercise.muscle_targets.map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(', ')}\n`;
+                }
+                fileContent += `  Equipment: ${exercise.equipment.join(', ')}\n`;
+                if (exercise.youtube_link) {
+                    fileContent += `  Demo Video: ${exercise.youtube_link}\n`;
+                }
+                fileContent += `\n`; // Add an extra newline for spacing between exercises
+            });
+
+            // Create a Blob from the content
+            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+
+            // Create a temporary link element
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            // Suggest a filename, including a simple date for uniqueness
+            const date = new Date();
+            const filename = `workout_plan_${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}.txt`;
+            a.download = filename;
+
+            // Append to body, click, and remove
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Clean up the object URL
+            URL.revokeObjectURL(a.href);
         });
     </script>
 </body>
