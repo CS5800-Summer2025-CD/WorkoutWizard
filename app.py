@@ -1,40 +1,24 @@
-# app.py
-
 from flask import Flask, render_template, request, jsonify
-from tinydb import TinyDB, Query
 import os
-import random
+from services.workout_service import WorkoutService
 
 app = Flask(__name__)
 
-# --- TinyDB Configuration ---
-# Get the base directory of the application (where app.py resides)
+# --- Configuration & Paths ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Define the local 'db' folder for TinyDB when running development locally
 LOCAL_DB_DIR = os.path.join(BASE_DIR, 'db')
 DEFAULT_DB_FILE_PATH = os.path.join(LOCAL_DB_DIR, 'workout_db.json')
-
-# Get the TinyDB path from an environment variable (for Azure deployment),
-# or default to the 'db' folder within the local project root for development.
 DB_PATH = os.environ.get('TINYDB_PATH', DEFAULT_DB_FILE_PATH)
 
-# Ensure the directory for the DB file exists.
-# This will create the 'db' folder if running locally and it doesn't exist.
-# For Azure, it ensures the mounted path's directory exists (though the mount itself ensures the top-level path).
-db_directory = os.path.dirname(DB_PATH)
-if not os.path.exists(db_directory):
-    os.makedirs(db_directory, exist_ok=True) # exist_ok=True prevents error if dir already exists
+# Ensure directory exists
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
-# Initialize TinyDB with the determined path
-db = TinyDB(DB_PATH)
+# --- Metadata for the Frontend ---
+EXERCISE_TYPES = ["strength", "cardio", "recovery", "stability", "circuit", "anaerobic", "flexibility"]
+SPORTS = ["swimming", "running", "biking", "yoga"]
+MUSCLE_TARGETS = ["shoulder", "upper body", "upper back", "chest", "triceps", "core", "full body", "legs", "glutes"]
 
-# --- Initial Data Population Logic (Crucial for TinyDB on persistent storage) ---
-# This logic will run on every app startup.
-# It checks if the database is empty and populates it if so.
-# This ensures data exists on the *persistent* storage even after redeployments.
-
-# Define your exercise data as a Python list of dictionaries
+# --- Initial Seeding Data ---
 INITIAL_EXERCISE_DATA = [
     {
         "name": "Dumbbell Shoulder Press",
@@ -174,19 +158,8 @@ INITIAL_EXERCISE_DATA = [
     }
 ]
 
-# Populate database only if it's empty
-if len(db) == 0:
-    print(f"Database is empty at {DB_PATH}, populating with initial data...")
-    db.insert_multiple(INITIAL_EXERCISE_DATA)
-    print("Initial data population complete.")
-else:
-    print(f"Database at {DB_PATH} already contains data, skipping initial population.")
-
-
-EXERCISE_TYPES = ["strength", "cardio", "recovery", "stability", "circuit", "anaerobic", "flexibility"]
-SPORTS = ["swimming", "running", "biking", "yoga"]
-MUSCLE_TARGETS = ["shoulder", "upper body", "upper back", "chest", "triceps", "core", "full body", "legs", "glutes"]
-
+# Initialize the Service (This handles DB connection and seeding)
+workout_service = WorkoutService(DB_PATH, initial_data=INITIAL_EXERCISE_DATA)
 
 @app.route('/')
 def index():
@@ -198,72 +171,18 @@ def index():
 @app.route('/generate_workout', methods=['POST'])
 def generate_workout():
     data = request.get_json()
-    selected_types = data.get('selected_types', [])
-    selected_sports = data.get('selected_sports', [])
-    selected_muscle_targets = data.get('selected_muscle_targets', [])
+    
+    # Use the service to generate the plan
+    workout_plan, error_msg = workout_service.generate_plan(
+        data.get('selected_types', []),
+        data.get('selected_sports', []),
+        data.get('selected_muscle_targets', [])
+    )
 
-    Exercise = Query()
-    all_conditions = []
-
-    # Build OR'd condition for exercise types
-    type_query = None
-    if selected_types:
-        for t in selected_types:
-            if type_query is None:
-                type_query = Exercise.types.any(t)
-            else:
-                type_query |= Exercise.types.any(t)
-        if type_query:
-            all_conditions.append(type_query)
-
-    # Build OR'd condition for sports
-    sport_query = None
-    if selected_sports:
-        for s in selected_sports:
-            if sport_query is None:
-                sport_query = Exercise.sports.any(s)
-            else:
-                sport_query |= Exercise.sports.any(s)
-        if sport_query:
-            all_conditions.append(sport_query)
-
-    # Build OR'd condition for muscle targets
-    muscle_query = None
-    if selected_muscle_targets:
-        for m in selected_muscle_targets:
-            if muscle_query is None:
-                muscle_query = Exercise.muscle_targets.any(m)
-            else:
-                muscle_query |= Exercise.muscle_targets.any(m)
-        if muscle_query:
-            all_conditions.append(muscle_query)
-
-    # If no attributes are selected, return a message
-    if not all_conditions:
-        return jsonify({"workout_plan": [], "message": "Please select at least one attribute to generate a workout."})
-
-    # Combine all individual category conditions with a logical AND
-    final_query = all_conditions[0]
-    for cond in all_conditions[1:]:
-        final_query &= cond
-
-    # Perform the search
-    matching_exercises = db.search(final_query)
-
-    # If too many exercises are found, select a random subset
-    num_exercises_to_select = min(len(matching_exercises), 5)
-
-    if num_exercises_to_select > 0:
-        workout_plan = random.sample(matching_exercises, num_exercises_to_select)
-    else:
-        workout_plan = []
-
-    if not workout_plan:
-        return jsonify({"workout_plan": [], "message": "No exercises found matching your criteria. Try different selections!"})
+    if error_msg:
+        return jsonify({"workout_plan": [], "message": error_msg})
 
     return jsonify({"workout_plan": workout_plan})
 
 if __name__ == '__main__':
-    # When running locally, the DB_PATH will be a local file.
-    # The initial population logic above handles seeding.
     app.run(debug=True)
