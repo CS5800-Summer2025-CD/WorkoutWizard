@@ -1,2 +1,4 @@
 **/__pycache__/
- db/*
+db/*
+migrate_to_cosmos.py
+.env

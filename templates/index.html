@@ -19,35 +19,35 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Light blue-gray background */
+            background-color: #f0f4f8; 
         }
         .container {
             max-width: 900px;
         }
         .section-title {
-            color: #1e3a8a; /* Darker blue for titles */
+            color: #1e3a8a; 
         }
         .checkbox-label {
             cursor: pointer;
             padding: 8px 12px;
-            border-radius: 9999px; /* Fully rounded */
-            border: 1px solid #d1d5db; /* Light gray border */
+            border-radius: 9999px; 
+            border: 1px solid #d1d5db; 
             transition: all 0.2s ease-in-out;
-            display: inline-block; /* Ensure padding and margin work */
+            display: inline-block; 
         }
         .checkbox-label:hover {
-            background-color: #e2e8f0; /* Light gray on hover */
+            background-color: #e2e8f0; 
         }
         input[type="checkbox"]:checked + .checkbox-label {
-            background-color: #3b82f6; /* Blue when checked */
+            background-color: #3b82f6; 
             color: white;
             border-color: #3b82f6;
         }
         input[type="checkbox"] {
-            display: none; /* Hide the actual checkbox */
+            display: none; 
         }
         .button-primary {
-            background-image: linear-gradient(to right, #6366f1, #3b82f6); /* Purple to blue gradient */
+            background-image: linear-gradient(to right, #6366f1, #3b82f6); 
             color: white;
             padding: 12px 24px;
             border-radius: 9999px;
@@ -67,7 +67,7 @@
             padding: 24px;
         }
         .youtube-link {
-            color: #3b82f6; /* Blue link color */
+            color: #3b82f6; 
             text-decoration: none;
         }
         .youtube-link:hover {
@@ -145,21 +145,22 @@
     </div>
 
     <script>
-        // NEW: Global variable to store the last generated workout plan
         let lastGeneratedWorkoutPlan = [];
 
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
+            // Collect selected values from the checkboxes populated by Jinja2
             const selectedTypes = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const selectedSports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const selectedMuscleTargets = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
             const workoutListDiv = document.getElementById('workoutList');
-            const downloadButton = document.getElementById('downloadWorkoutBtn'); // Get the download button
+            const downloadButton = document.getElementById('downloadWorkoutBtn');
 
             workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Generating workout...</p>';
-            downloadButton.classList.add('hidden'); // Hide download button while generating/if error
+            downloadButton.classList.add('hidden');
 
             try {
+                // Fetch from the new cloud-ready endpoint in app.py
                 const response = await fetch('/generate_workout', {
                     method: 'POST',
                     headers: {
@@ -176,10 +177,10 @@
 
                 if (data.message) {
                     workoutListDiv.innerHTML = `<p class="text-center text-red-500 font-semibold">${data.message}</p>`;
-                    lastGeneratedWorkoutPlan = []; // Clear plan on error
+                    lastGeneratedWorkoutPlan = [];
                 } else if (data.workout_plan && data.workout_plan.length > 0) {
-                    workoutListDiv.innerHTML = ''; // Clear previous content
-                    lastGeneratedWorkoutPlan = data.workout_plan; // Store the generated plan
+                    workoutListDiv.innerHTML = ''; 
+                    lastGeneratedWorkoutPlan = data.workout_plan; 
                     
                     data.workout_plan.forEach(exercise => {
                         const exerciseCard = document.createElement('div');
@@ -199,19 +200,18 @@
                         `;
                         workoutListDiv.appendChild(exerciseCard);
                     });
-                    downloadButton.classList.remove('hidden'); // Show download button after successful workout
+                    downloadButton.classList.remove('hidden'); 
                 } else {
                     workoutListDiv.innerHTML = '<p class="text-center text-gray-600">No exercises found matching your criteria. Try different selections!</p>';
-                    lastGeneratedWorkoutPlan = []; // Clear plan if no exercises found
+                    lastGeneratedWorkoutPlan = [];
                 }
             } catch (error) {
                 console.error('Error generating workout:', error);
                 workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred while generating your workout. Please try again.</p>';
-                lastGeneratedWorkoutPlan = []; // Clear plan on error
+                lastGeneratedWorkoutPlan = [];
             }
         });
 
-        // NEW: Event listener for the download button
         document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
             if (lastGeneratedWorkoutPlan.length === 0) {
                 alert("Please generate a workout first!");
@@ -232,26 +232,18 @@
                 if (exercise.youtube_link) {
                     fileContent += `  Demo Video: ${exercise.youtube_link}\n`;
                 }
-                fileContent += `\n`; // Add an extra newline for spacing between exercises
+                fileContent += `\n`; 
             });
 
-            // Create a Blob from the content
             const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-
-            // Create a temporary link element
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            // Suggest a filename, including a simple date for uniqueness
             const date = new Date();
             const filename = `workout_plan_${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}.txt`;
             a.download = filename;
-
-            // Append to body, click, and remove
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-
-            // Clean up the object URL
             URL.revokeObjectURL(a.href);
         });
     </script>
