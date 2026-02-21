@@ -1,11 +1,19 @@
 import os
+import logging
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
-# Use the folder-based import as discussed
+from azure.monitor.opentelemetry import configure_azure_monitor
 from services.workout_service import WorkoutService
 
 # 1. Initialize environment and services
 load_dotenv()
+
+configure_azure_monitor() # This one line enables full cloud monitoring
+
+# 2. Setup standard Python logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 app = Flask(__name__)
 workout_service = WorkoutService()
 
@@ -25,6 +33,8 @@ def index():
 def generate():
     # This endpoint matches the fetch() call in your index.html
     data = request.json
+    # Log a custom message so we can see what users are searching for
+    logger.info(f"User requested workout for: {data.get('selected_types')}")
     selected_types = data.get('selected_types', [])
     selected_sports = data.get('selected_sports', [])
     selected_muscle_targets = data.get('selected_muscle_targets', [])
