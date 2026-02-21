@@ -34,10 +34,15 @@ def generate():
     # This endpoint matches the fetch() call in your index.html
     data = request.json
     # Log a custom message so we can see what users are searching for
-    logger.info(f"User requested workout for: {data.get('selected_types')}")
+    
     selected_types = data.get('selected_types', [])
+    logger.info(f"User requested workout for: {data.get('selected_types')}")
+    
     selected_sports = data.get('selected_sports', [])
+    logger.info(f"User requested workout for: {data.get('selected_sports')}")
+    
     selected_muscle_targets = data.get('selected_muscle_targets', [])
+    logger.info(f"User requested workout for: {data.get('selected_muscle_targets')}")
 
     # The service now handles the cloud query via Cosmos SDK
     plan, error = workout_service.generate_plan(
