@@ -25,3 +25,4 @@ jobs:
     - name: Build Docker image
       run: |
         docker build . --file Dockerfile --tag workout-wizardry:test
+      # Optionally add a test run step here

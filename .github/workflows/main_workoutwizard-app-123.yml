@@ -1,83 +1,75 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
-
 name: Build and deploy Python app to Azure Web App - workoutwizard-app-123
 
 on:
   push:
     branches:
       - main
-  # Add workflow_dispatch to allow manual triggering from GitHub Actions UI
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: workoutwizard-app-123  # Replace with your actual App Service Name
-  AZURE_WEBAPP_PACKAGE_PATH: '.'          # Path to your web app project, defaults to the repository root
-  PYTHON_VERSION: '3.12'                  # Python version you're using (e.g., '3.10', '3.11', '3.12')
-  STARTUP_COMMAND: 'gunicorn --bind 0.0.0.0:%PORT% app:app' # Your Gunicorn startup command
+  AZURE_WEBAPP_NAME: 'workoutwizard-app-123' 
+  PYTHON_VERSION: '3.12'
 
 jobs:
-  build: # Renamed job to 'build' for clarity, as 'build-and-deploy' implies it does both.
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read # This is required for actions/checkout
+    
+    # Injects GitHub Secrets into the test environment
+    env:
+      COSMOS_URI: ${{ secrets.COSMOS_URI }}
+      COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
+      COSMOS_DATABASE: "WorkoutDB"
+      COSMOS_CONTAINER: "Exercises"
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Create and start virtual environment
+      - name: Install dependencies
         run: |
           python -m venv venv
           source venv/bin/activate
-      
-      - name: Install dependencies
-        run: |
-          source venv/bin/activate # Activate venv to install into it
+          pip install --upgrade pip
           pip install -r requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-      - name: Run tests # Ensure pytest is installed if you run this. Add `pip install pytest` to install dependencies
+          pip install pytest
+
+      - name: Run Unit Tests
         run: |
           source venv/bin/activate
-          pytest || true # Use '|| true' to allow workflow to continue if tests fail, or remove to make tests block deployment
+          # Runs the updated test_app.py
+          pytest || echo "Tests failed, but proceeding with build."
 
-      - name: Prepare artifact for deployment
-        # This step creates the zip file that will be deployed.
-        # It's crucial to exclude the virtual environment (`venv/`) and the `.git/` folder.
-        # Azure App Service deploys the content of the zip to /home/site/wwwroot.
-        # Including venv/ can make the deployment much larger and slower, and unnecessary.
+      - name: Zip artifact for deployment
         run: |
           zip -r deployment_package.zip . -x "venv/*" ".git/*" ".github/*"
 
-      - name: Upload artifact for deployment jobs
+      - name: Upload artifact for deploy job
         uses: actions/upload-artifact@v4
         with:
-          name: python-app-package # Renamed artifact for clarity
-          path: deployment_package.zip # Only upload the zip file
-          retention-days: 1 # Optional: How long to keep the artifact (e.g., 1 day for quick deployments)
+          name: python-app-package
+          path: deployment_package.zip
+          retention-days: 1
 
   deploy:
     runs-on: ubuntu-latest
-    needs: build # This correctly indicates that 'deploy' depends on 'build'
+    needs: build
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: python-app-package # Must match the name used in the upload-artifact step
-          path: ${{ github.workspace }}/deploy_artifact # Download to a specific path if needed, defaults to workspace
+          name: python-app-package
+          path: . 
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
         id: deploy-to-webapp
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }} # Use the environment variable
-          slot-name: 'Production'
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_3BD9CF882EF244D3B98AB2C1D8D6FFF7 }}
-          package: ${{ github.workspace }}/deploy_artifact/deployment_package.zip # Specify the path to the zipped artifact
+          package: deployment_package.zip
