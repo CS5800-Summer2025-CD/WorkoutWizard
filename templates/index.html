@@ -132,7 +132,10 @@
                 Generate Workout
             </button>
             <button id="downloadWorkoutBtn" class="button-primary hidden">
-                Download Workout
+                Download (.txt)
+            </button>
+            <button id="downloadPDFBtn" class="button-primary hidden ml-4">
+                Download (.pdf)
             </button>
         </div>
 
@@ -148,24 +151,22 @@
         let lastGeneratedWorkoutPlan = [];
 
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
-            // Collect selected values from the checkboxes populated by Jinja2
             const selectedTypes = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const selectedSports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const selectedMuscleTargets = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
             const workoutListDiv = document.getElementById('workoutList');
-            const downloadButton = document.getElementById('downloadWorkoutBtn');
+            const downloadTxtButton = document.getElementById('downloadWorkoutBtn');
+            const downloadPDFButton = document.getElementById('downloadPDFBtn');
 
             workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Generating workout...</p>';
-            downloadButton.classList.add('hidden');
+            downloadTxtButton.classList.add('hidden');
+            downloadPDFButton.classList.add('hidden');
 
             try {
-                // Fetch from the new cloud-ready endpoint in app.py
                 const response = await fetch('/generate_workout', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         selected_types: selectedTypes,
                         selected_sports: selectedSports,
@@ -200,51 +201,77 @@
                         `;
                         workoutListDiv.appendChild(exerciseCard);
                     });
-                    downloadButton.classList.remove('hidden'); 
+                    downloadTxtButton.classList.remove('hidden'); 
+                    downloadPDFButton.classList.remove('hidden'); 
                 } else {
-                    workoutListDiv.innerHTML = '<p class="text-center text-gray-600">No exercises found matching your criteria. Try different selections!</p>';
+                    workoutListDiv.innerHTML = '<p class="text-center text-gray-600">No exercises found matching your criteria.</p>';
                     lastGeneratedWorkoutPlan = [];
                 }
             } catch (error) {
                 console.error('Error generating workout:', error);
-                workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred while generating your workout. Please try again.</p>';
+                workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred. Please try again.</p>';
                 lastGeneratedWorkoutPlan = [];
             }
         });
 
+        // Existing TXT Download logic
         document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
-            if (lastGeneratedWorkoutPlan.length === 0) {
-                alert("Please generate a workout first!");
-                return;
-            }
+            if (lastGeneratedWorkoutPlan.length === 0) return;
 
             let fileContent = "Workout Wizard - Generated Workout Plan\n\n";
             lastGeneratedWorkoutPlan.forEach((exercise, index) => {
                 fileContent += `--- Exercise ${index + 1}: ${exercise.name} ---\n`;
-                fileContent += `  Types: ${exercise.types.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}\n`;
-                if (exercise.sports.length > 0) {
-                    fileContent += `  Sports: ${exercise.sports.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')}\n`;
-                }
-                if (exercise.muscle_targets.length > 0) {
-                    fileContent += `  Muscle Targets: ${exercise.muscle_targets.map(m => m.charAt(0).toUpperCase() + m.slice(1)).join(', ')}\n`;
-                }
-                fileContent += `  Equipment: ${exercise.equipment.join(', ')}\n`;
-                if (exercise.youtube_link) {
-                    fileContent += `  Demo Video: ${exercise.youtube_link}\n`;
-                }
-                fileContent += `\n`; 
+                fileContent += `  Types: ${exercise.types.join(', ')}\n`;
+                fileContent += `  Equipment: ${exercise.equipment.join(', ')}\n\n`;
             });
 
             const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            const date = new Date();
-            const filename = `workout_plan_${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}.txt`;
-            a.download = filename;
+            a.download = `workout_plan_${new Date().toISOString().slice(0,10)}.txt`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(a.href);
+        });
+
+        // NEW PDF Download logic connecting to Azure Function
+        document.getElementById('downloadPDFBtn').addEventListener('click', async () => {
+            if (lastGeneratedWorkoutPlan.length === 0) {
+                alert("Please generate a workout first!");
+                return;
+            }
+
+            const downloadPDFBtn = document.getElementById('downloadPDFBtn');
+            const originalText = downloadPDFBtn.innerText;
+            downloadPDFBtn.innerText = "Generating PDF...";
+            downloadPDFBtn.disabled = true;
+
+            try {
+                // IMPORTANT: Replace the URL below with your local or deployed Azure Function URL
+                const response = await fetch('http://localhost:7071/api/generate_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ workout_plan: lastGeneratedWorkoutPlan })
+                });
+
+                if (!response.ok) throw new Error("Could not contact the PDF service.");
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Workout_Plan_${new Date().toISOString().slice(0,10)}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("Error: " + error.message);
+                console.error(error);
+            } finally {
+                downloadPDFBtn.innerText = originalText;
+                downloadPDFBtn.disabled = false;
+            }
         });
     </script>
 </body>
