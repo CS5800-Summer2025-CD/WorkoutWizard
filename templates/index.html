@@ -241,17 +241,29 @@
                 return;
             }
 
+            // 1. Enrich the data with default sets and reps
+            const workoutWithStats = lastGeneratedWorkoutPlan.map(ex => ({
+                ...ex,
+                sets: 3,  // Change defaults to make them dynamic later
+                reps: 12
+            }));
+
             const downloadPDFBtn = document.getElementById('downloadPDFBtn');
             const originalText = downloadPDFBtn.innerText;
             downloadPDFBtn.innerText = "Generating PDF...";
             downloadPDFBtn.disabled = true;
 
             try {
-                // New live Azure Function URL
                 const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ workout_plan: { title: "My Workout Plan", exercises: lastGeneratedWorkoutPlan } })
+                    // 2. Send the enriched 'workoutWithStats' array
+                    body: JSON.stringify({ 
+                        workout_plan: { 
+                            title: "My Custom Workout Plan", 
+                            exercises: workoutWithStats 
+                        } 
+                    })
                 });
 
                 if (!response.ok) throw new Error("Could not contact the PDF service.");
