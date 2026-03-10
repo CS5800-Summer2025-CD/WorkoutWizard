@@ -245,7 +245,7 @@
             document.body.removeChild(a);
         });
 
-        // PDF Download logic with Intensity, Time-based units, and Rest Time
+        // PDF Download logic - Corrected to remove Rest and duplicate units
         document.getElementById('downloadPDFBtn').addEventListener('click', async () => {
             if (lastGeneratedWorkoutPlan.length === 0) {
                 alert("Please generate a workout first!");
@@ -258,48 +258,44 @@
             downloadPDFBtn.innerText = "Generating PDF...";
             downloadPDFBtn.disabled = true;
 
-            // Transform data: Enrich with Sets, Reps/Seconds, and Rest Time
             const workoutWithStats = lastGeneratedWorkoutPlan.map(ex => {
-                let sets, reps, unit, rest;
+                let sets, reps, unit;
 
-                // Set baseline based on intensity selection
                 if (intensity === 'beginner') {
                     sets = 2;
                     reps = 10;
-                    rest = "90s";
                 } else if (intensity === 'advanced') {
                     sets = 5;
                     reps = 15;
-                    rest = "45s";
                 } else {
                     sets = 3;
                     reps = 12;
-                    rest = "60s";
                 }
 
-                // Logic for time-based exercises
-                unit = "reps";
+                unit = ""; // We leave this blank for standard exercises because the Python function adds "reps"
                 const nameLower = ex.name.toLowerCase();
+                
                 if (nameLower.includes("plank") || nameLower.includes("hold") || nameLower.includes("stretch")) {
-                    unit = "seconds";
-                    reps = (intensity === 'advanced') ? 60 : (intensity === 'beginner' ? 30 : 45);
+                    reps = `${(intensity === 'advanced') ? 60 : (intensity === 'beginner' ? 30 : 45)} seconds`;
+                } else {
+                    // Just return the number; the Python PDF generator handles the word "reps"
+                    reps = reps;
                 }
 
                 return {
                     ...ex,
                     sets: sets,
-                    reps: `${reps} ${unit} (Rest: ${rest})` // Combines reps and rest for the PDF
+                    reps: reps
                 };
             });
 
             try {
-                // Ensure this matches your specific Azure Function URL
                 const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         workout_plan: { 
-                            title: `My ${intensity.charAt(0).toUpperCase() + intensity.slice(1)} Plan`, 
+                            title: `My ${intensity.charAt(0).toUpperCase() + intensity.slice(1)} Workout`, 
                             exercises: workoutWithStats 
                         } 
                     })
