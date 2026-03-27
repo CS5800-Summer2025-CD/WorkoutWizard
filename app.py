@@ -127,6 +127,9 @@ def generate():
     selected_sports = data.get('selected_sports', [])
     selected_muscle_targets = data.get('selected_muscle_targets', [])
 
+    # Log the request
+    logger.info(f"Generating workout for: {selected_types}, {selected_sports}, {selected_muscle_targets}")
+
     if not selected_types and not selected_sports and not selected_muscle_targets:
         return jsonify({
             "workout_plan": [],
