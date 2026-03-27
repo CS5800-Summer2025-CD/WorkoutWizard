@@ -93,18 +93,19 @@ def generate_ai_workout():
 
         # 3. GENERATION: Call Groq with the contextualized prompt
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant", 
+            model="llama-3.1-8b-instant",
             messages=[
                 {
                     "role": "system", 
                     "content": f"""You are the Workout Wizard AI. 
-                    {exercise_context}
+                    Use ONLY these exercises: {exercise_context}
                     
-                    RULES:
-                    1. Create a safe plan based on the user's request.
-                    2. If they mention injury, keep it low impact.
-                    3. Always specify sets and reps/seconds.
-                    4. If a request is dangerous, advise seeing a doctor.
+                    STRICT FORMATTING RULES:
+                    1. Use '## Day Name' for main day headers (e.g., ## Monday: Endurance).
+                    2. Use '### Exercise Name' for specific exercises.
+                    3. ALWAYS use bolding for **Warm-up** and **Cool-down**.
+                    4. Each instruction MUST be a separate bullet point starting with '- '.
+                    5. Do not add extra empty lines between an exercise title and its first bullet.
                     """
                 },
                 {"role": "user", "content": user_prompt}
