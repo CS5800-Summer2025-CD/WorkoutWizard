@@ -21,6 +21,8 @@
         body { font-family: 'Inter', sans-serif; background-color: #f0f4f8; }
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
+        
+        /* Original Checkbox Styling from index_old.html */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -30,6 +32,8 @@
             background-color: #3b82f6; color: white; border-color: #3b82f6;
         }
         input[type="checkbox"] { display: none; }
+        
+        /* Original Button Styling */
         .button-primary {
             background-image: linear-gradient(to right, #6366f1, #3b82f6); 
             color: white; padding: 12px 24px; border-radius: 9999px;
@@ -37,52 +41,31 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: none;
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
+        
+        /* Card Styling for Regular Database Results */
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
-        .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 500; }
+        .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
         
-        /* 1. Day Headers (H2) - Blue highlight fix */
+        /* AI Wizard Content Styling (Markdown Fixes) */
         .ai-content-area h2 {
-            display: block;          /* Changed from inline-block to block to force a new line */
-            width: fit-content;      /* Keeps the background "pill" tight to the text */
-            background-color: #e0f2fe;
+            display: block;
+            width: fit-content;
+            background-color: #e0f2fe; /* Light blue pill for Days */
             color: #0369a1;
             padding: 8px 16px;
             border-radius: 8px;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
-            margin-top: 2.5rem;      /* Increased spacing above headers */
+            margin-top: 2.5rem;
             margin-bottom: 1rem;
-            clear: both;             /* Ensures no elements float beside it */
+            clear: both;
         }
-
-        /* 2. Exercise Titles (H3) - Yellow highlight fix */
-        .ai-content-area h3 { 
-            margin-top: 1.25rem; 
-            margin-bottom: 0.25rem; /* Reduced spacing to fix yellow highlight issue */
-            font-weight: 700; 
-            color: #4c1d95; 
-            font-size: 1.15rem;
-        }
-
-        /* 3. Consistent Bullets and Text - Green highlight fix */
-        .ai-content-area ul { 
-            list-style-type: disc; 
-            margin-left: 1.5rem; 
-            margin-bottom: 1rem; 
-        }
-
-        .ai-content-area li { 
-            margin-bottom: 0.4rem; 
-            line-height: 1.5;
-            display: list-item;
-        }
-
-        /* Force Warm-up/Cool-down consistency */
-        .ai-content-area strong {
-            color: #111827;
-            font-weight: 700;
-        }
+        .ai-content-area h3 { margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 700; color: #4c1d95; font-size: 1.15rem; }
+        .ai-content-area ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
+        .ai-content-area li { margin-bottom: 0.4rem; line-height: 1.5; display: list-item; }
+        .ai-content-area p { margin-bottom: 1rem; line-height: 1.6; }
+        .ai-content-area strong { color: #111827; font-weight: 700; }
     </style>
 </head>
 <body class="p-6">
@@ -95,17 +78,12 @@
 
         <div class="card bg-purple-50 border-2 border-purple-200 mb-10">
             <h2 class="text-2xl font-bold mb-2 text-purple-800 text-center">Ask the Wizard 🧙‍♂️</h2>
-            <p class="text-gray-600 text-center mb-4 italic text-sm">"I need a 20-minute core workout for a beginner."</p>
-            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="Describe your goals or physical constraints..."></textarea>
+            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="I need a plan for swimming and core strength..."></textarea>
             <div class="flex justify-center">
                 <button id="aiGenerateBtn" class="button-primary bg-gradient-to-r from-purple-500 to-indigo-600">
                     Generate Smart Plan
                 </button>
             </div>
-        </div>
-
-        <div class="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-100 text-center">
-            <p class="text-gray-600 text-sm">Or use the filters below for a manual database search:</p>
         </div>
 
         <div class="card mb-10">
@@ -121,35 +99,33 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Exercise Types</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Types</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for type in exercise_types %}
                     <div>
-                        <input type="checkbox" id="type-{{ type }}" name="exercise_type" value="{{ type }}" class="hidden">
+                        <input type="checkbox" id="type-{{ type }}" name="exercise_type" value="{{ type }}">
                         <label for="type-{{ type }}" class="checkbox-label text-gray-700 text-xs capitalize">{{ type }}</label>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Sports</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Sports</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for sport in sports %}
                     <div>
-                        <input type="checkbox" id="sport-{{ sport }}" name="sport" value="{{ sport }}" class="hidden">
+                        <input type="checkbox" id="sport-{{ sport }}" name="sport" value="{{ sport }}">
                         <label for="sport-{{ sport }}" class="checkbox-label text-gray-700 text-xs capitalize">{{ sport }}</label>
                     </div>
                     {% endfor %}
                 </div>
             </div>
-
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Muscle Targets</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Muscles</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for muscle in muscle_targets %}
                     <div>
-                        <input type="checkbox" id="muscle-{{ muscle }}" name="muscle_target" value="{{ muscle }}" class="hidden">
+                        <input type="checkbox" id="muscle-{{ muscle }}" name="muscle_target" value="{{ muscle }}">
                         <label for="muscle-{{ muscle }}" class="checkbox-label text-gray-700 text-xs capitalize">{{ muscle }}</label>
                     </div>
                     {% endfor %}
@@ -165,8 +141,8 @@
 
         <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[200px]">
             <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Plan 💪</h2>
-            <div id="workoutList" class="space-y-4 text-gray-600">
-                <p class="text-center">Select your options or ask the Wizard to begin.</p>
+            <div id="workoutList" class="space-y-4">
+                <p class="text-center text-gray-500">Select options or ask the Wizard to begin.</p>
             </div>
         </div>
     </div>
@@ -177,17 +153,12 @@
         const downloadTxtButton = document.getElementById('downloadWorkoutBtn');
         const downloadPDFButton = document.getElementById('downloadPDFBtn');
 
-        // --- AI WIZARD GENERATION (RAG) ---
+        // --- AI WIZARD LOGIC ---
         document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
-            const btn = document.getElementById('aiGenerateBtn');
-
             if (!prompt) return alert("Please enter a prompt!");
 
-            btn.innerText = "Consulting the Wizard...";
-            btn.disabled = true;
-            workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Retrieving exercises and synthesizing plan...</p>';
-            
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-500 italic">Consulting the Wizard...</p>';
             downloadTxtButton.classList.add('hidden');
             downloadPDFButton.classList.add('hidden');
 
@@ -200,36 +171,25 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Use Marked.js to parse the AI Markdown into clean HTML
-                    const formattedPlan = marked.parse(data.ai_plan);
                     workoutListDiv.innerHTML = `
                         <div class="p-8 bg-white rounded-2xl border border-purple-100 shadow-sm">
                             <h3 class="text-2xl font-bold text-purple-800 mb-6 border-b pb-4">Wizard's Custom Strategy</h3>
                             <div class="ai-content-area text-gray-700">
-                                ${formattedPlan}
+                                ${marked.parse(data.ai_plan)}
                             </div>
-                            <p class="mt-8 pt-4 border-t text-xs text-purple-300 italic">Generated using Retrieval-Augmented Generation (RAG).</p>
+                            <p class="mt-8 pt-4 border-t text-xs text-purple-300 italic font-medium">Synthesized from database exercises via RAG.</p>
                         </div>`;
-                } else {
-                    workoutListDiv.innerHTML = `<p class="text-center text-red-500">Error: ${data.error}</p>`;
                 }
-            } catch (err) {
-                workoutListDiv.innerHTML = `<p class="text-center text-red-500">Server Connection Failed.</p>`;
-            } finally {
-                btn.innerText = "Generate Smart Plan";
-                btn.disabled = false;
-            }
+            } catch (err) { workoutListDiv.innerHTML = '<p class="text-red-500 text-center">Service Error.</p>'; }
         });
 
-        // --- MANUAL DB GENERATION ---
+        // --- REGULAR DB SEARCH LOGIC (RESTORED STYLING) ---
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const selectedTypes = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const selectedSports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const selectedMuscleTargets = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
             workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Querying CosmosDB...</p>';
-            downloadTxtButton.classList.add('hidden');
-            downloadPDFButton.classList.add('hidden');
 
             try {
                 const response = await fetch('/generate_workout', {
@@ -241,38 +201,38 @@
                         selected_muscle_targets: selectedMuscleTargets
                     }),
                 });
-
                 const data = await response.json();
 
-                if (data.message) {
-                    workoutListDiv.innerHTML = `<p class="text-center text-red-500 font-semibold">${data.message}</p>`;
-                    lastGeneratedWorkoutPlan = [];
-                } else if (data.workout_plan && data.workout_plan.length > 0) {
+                if (data.workout_plan && data.workout_plan.length > 0) {
                     workoutListDiv.innerHTML = ''; 
                     lastGeneratedWorkoutPlan = data.workout_plan; 
                     
                     data.workout_plan.forEach(exercise => {
                         const exerciseCard = document.createElement('div');
-                        exerciseCard.className = 'card border border-blue-50 p-6 flex flex-col items-start';
+                        // Restored classic card appearance
+                        exerciseCard.className = 'card border border-gray-100 p-6 flex flex-col items-start bg-white rounded-xl shadow-sm mb-4';
                         exerciseCard.innerHTML = `
-                            <h3 class="text-xl font-bold text-gray-800 mb-2">${exercise.name}</h3>
-                            <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${exercise.equipment.join(', ')}</p>
-                            <a href="${exercise.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm">
-                                Watch Demo Video &rarr;
-                            </a>
+                            <h3 class="text-xl font-bold text-gray-800 mb-3">${exercise.name}</h3>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                ${exercise.types.map(t => `<span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold border border-blue-100 capitalize">${t}</span>`).join('')}
+                                ${exercise.sports.map(s => `<span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full font-semibold border border-green-100 capitalize">${s}</span>`).join('')}
+                                ${exercise.muscle_targets.map(m => `<span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full font-semibold border border-purple-100 capitalize">${m}</span>`).join('')}
+                            </div>
+                            <p class="text-gray-600 text-sm mb-4"><strong>Equipment:</strong> ${exercise.equipment.join(', ')}</p>
+                            <a href="${exercise.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm">Watch Demo Video →</a>
                         `;
                         workoutListDiv.appendChild(exerciseCard);
                     });
                     downloadTxtButton.classList.remove('hidden'); 
                     downloadPDFButton.classList.remove('hidden'); 
+                } else {
+                    workoutListDiv.innerHTML = `<p class="text-center text-red-500 font-bold">${data.message || 'No matches found.'}</p>`;
                 }
-            } catch (error) {
-                workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred.</p>';
-            }
+            } catch (error) { workoutListDiv.innerHTML = '<p class="text-center text-red-500 italic">Database Error.</p>'; }
         });
 
         // --- TXT DOWNLOAD ---
-        document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
+        downloadTxtButton.addEventListener('click', () => {
             if (lastGeneratedWorkoutPlan.length === 0) return;
             let fileContent = "Workout Wizard - Database Plan\n\n";
             lastGeneratedWorkoutPlan.forEach((exercise, index) => {
@@ -281,12 +241,12 @@
             const blob = new Blob([fileContent], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `Plan_${new Date().toISOString().slice(0,10)}.txt`;
+            a.download = `Workout_Plan_${new Date().toISOString().slice(0,10)}.txt`;
             a.click();
         });
 
         // --- PDF DOWNLOAD (Azure Function Integration) ---
-        document.getElementById('downloadPDFBtn').addEventListener('click', async () => {
+        downloadPDFButton.addEventListener('click', async () => {
             if (lastGeneratedWorkoutPlan.length === 0) return;
             const intensity = document.getElementById('intensitySelect').value;
             downloadPDFButton.innerText = "Generating PDF...";
@@ -295,22 +255,15 @@
             const workoutWithStats = lastGeneratedWorkoutPlan.map(ex => {
                 let sets = (intensity === 'advanced') ? 5 : (intensity === 'beginner' ? 2 : 3);
                 let reps = (intensity === 'advanced') ? 15 : (intensity === 'beginner' ? 10 : 12);
-                if (ex.name.toLowerCase().includes("plank")) {
-                    reps = (intensity === 'advanced') ? "60 seconds" : "30 seconds";
-                }
-                return { ...ex, sets: sets, reps: reps };
+                if (ex.name.toLowerCase().includes("plank")) reps = (intensity === 'advanced') ? "60 seconds" : "30 seconds";
+                return { ...ex, sets, reps };
             });
 
             try {
                 const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        workout_plan: { 
-                            title: `${intensity.toUpperCase()} Session`, 
-                            exercises: workoutWithStats 
-                        } 
-                    })
+                    body: JSON.stringify({ workout_plan: { title: `${intensity.toUpperCase()} Session`, exercises: workoutWithStats } })
                 });
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -318,9 +271,8 @@
                 a.href = url;
                 a.download = "Workout_Plan.pdf";
                 a.click();
-            } catch (error) {
-                alert("PDF Service Error: " + error.message);
-            } finally {
+            } catch (error) { alert("PDF Error: " + error.message); } 
+            finally {
                 downloadPDFButton.innerText = "Download (.pdf)";
                 downloadPDFButton.disabled = false;
             }
