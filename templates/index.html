@@ -22,7 +22,7 @@
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
         
-        /* ORIGINAL STYLES FROM INDEX_OLD.HTML */
+        /* RESTORED ORIGINAL STYLES */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -41,12 +41,11 @@
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
         
-        /* RESTORED ORIGINAL CARD STYLE */
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
-        .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 500; }
+        .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI-SPECIFIC FORMATTING (PILL HEADERS) */
+        /* AI-SPECIFIC FORMATTING */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
@@ -57,6 +56,7 @@
         .ai-content-area ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
         .ai-content-area li { margin-bottom: 0.4rem; line-height: 1.5; display: list-item; }
         .ai-content-area p { margin-bottom: 1rem; line-height: 1.6; }
+        .ai-content-area strong { color: #111827; font-weight: 700; }
     </style>
 </head>
 <body class="p-6">
@@ -145,85 +145,132 @@
         const downloadTxtBtn = document.getElementById('downloadWorkoutBtn');
         const downloadPDFBtn = document.getElementById('downloadPDFBtn');
 
-        // AI Logic
+        // AI LOGIC
         document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
             if(!prompt) return alert("Please enter a prompt");
             
-            workoutListDiv.innerHTML = '<p class="text-center italic">Consulting the Wizard...</p>';
-            
-            const response = await fetch('/generate_ai_workout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
-            const data = await response.json();
-            if(data.success) {
-                isAiPlan = true;
-                aiTextForDownload = data.ai_plan;
-                workoutListDiv.innerHTML = `<div class="p-6 bg-white rounded-xl border border-purple-100 shadow-sm ai-content-area">
-                    ${marked.parse(data.ai_plan)}
-                </div>`;
-                downloadTxtBtn.classList.remove('hidden');
-                downloadPDFBtn.classList.remove('hidden');
-            }
+            workoutListDiv.innerHTML = '<p class="text-center italic text-gray-500">Consulting the Wizard...</p>';
+            downloadTxtBtn.classList.add('hidden');
+            downloadPDFBtn.classList.add('hidden');
+
+            try {
+                const response = await fetch('/generate_ai_workout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await response.json();
+                if(data.success) {
+                    isAiPlan = true;
+                    aiTextForDownload = data.ai_plan;
+                    workoutListDiv.innerHTML = `<div class="p-6 bg-white rounded-xl border border-purple-100 shadow-sm ai-content-area">
+                        ${marked.parse(data.ai_plan)}
+                    </div>`;
+                    downloadTxtBtn.classList.remove('hidden');
+                    downloadPDFBtn.classList.remove('hidden');
+                }
+            } catch (err) { alert("AI Service Error"); }
         });
 
-        // DB Logic (RESTORED ORIGINAL FORMAT)
+        // DB LOGIC
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const muscles = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
-            const response = await fetch('/generate_workout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles })
-            });
-            const data = await response.json();
-            
-            if (data.workout_plan) {
-                isAiPlan = false;
-                lastGeneratedWorkoutPlan = data.workout_plan;
-                workoutListDiv.innerHTML = '';
-                data.workout_plan.forEach(ex => {
-                    const div = document.createElement('div');
-                    div.className = 'card border border-gray-100 p-6 mb-4';
-                    div.innerHTML = `<h3 class="text-xl font-bold mb-2">${ex.name}</h3>
-                        <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${ex.equipment.join(', ')}</p>
-                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link">Watch Demo Video →</a>`;
-                    workoutListDiv.appendChild(div);
+            workoutListDiv.innerHTML = '<p class="text-center italic text-gray-500">Querying CosmosDB...</p>';
+            downloadTxtBtn.classList.add('hidden');
+            downloadPDFBtn.classList.add('hidden');
+
+            try {
+                const response = await fetch('/generate_workout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles })
                 });
-                downloadTxtBtn.classList.remove('hidden');
-                downloadPDFBtn.classList.remove('hidden');
-            }
+                const data = await response.json();
+                
+                if (data.workout_plan && data.workout_plan.length > 0) {
+                    isAiPlan = false;
+                    lastGeneratedWorkoutPlan = data.workout_plan;
+                    workoutListDiv.innerHTML = '';
+                    data.workout_plan.forEach(ex => {
+                        const div = document.createElement('div');
+                        div.className = 'card border border-gray-100 p-6 mb-4';
+                        div.innerHTML = `<h3 class="text-xl font-bold mb-2">${ex.name}</h3>
+                            <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${ex.equipment.join(', ')}</p>
+                            <a href="${ex.youtube_link}" target="_blank" class="youtube-link">Watch Demo Video →</a>`;
+                        workoutListDiv.appendChild(div);
+                    });
+                    downloadTxtBtn.classList.remove('hidden');
+                    downloadPDFBtn.classList.remove('hidden');
+                } else {
+                    workoutListDiv.innerHTML = `<p class="text-center text-red-500">${data.message || 'No matches found.'}</p>`;
+                }
+            } catch (error) { alert("Database Error"); }
         });
 
-        // Combined Download Logic
+        // DOWNLOAD TXT
         downloadTxtBtn.addEventListener('click', () => {
-            let content = isAiPlan ? aiTextForDownload : lastGeneratedWorkoutPlan.map(e => e.name).join('\n');
+            let content = isAiPlan ? aiTextForDownload : lastGeneratedWorkoutPlan.map((e, i) => `${i+1}. ${e.name}`).join('\n');
             const blob = new Blob([content], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = "Workout_Plan.txt";
+            a.download = `Workout_Plan_${new Date().toISOString().slice(0,10)}.txt`;
             a.click();
+            URL.revokeObjectURL(a.href);
         });
 
+        // DOWNLOAD PDF (FIXED)
         downloadPDFBtn.addEventListener('click', async () => {
             const intensity = document.getElementById('intensitySelect').value;
-            let payload = isAiPlan ? { workout_plan: { title: "AI Plan", exercises: [{ name: "Custom Plan", equipment: [], reps: aiTextForDownload, sets: "" }] } }
-                                  : { workout_plan: { title: "Custom Session", exercises: lastGeneratedWorkoutPlan.map(ex => ({...ex, sets: 3, reps: 12})) } };
-            
-            const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const blob = await response.blob();
-            const a = document.createElement('a');
-            a.href = URL.URL.createObjectURL(blob);
-            a.download = "Workout.pdf";
-            a.click();
+            downloadPDFBtn.innerText = "Generating PDF...";
+            downloadPDFBtn.disabled = true;
+
+            let payload;
+            if (isAiPlan) {
+                // Formatting AI plan into a structure the PDF function can parse
+                payload = { 
+                    workout_plan: { 
+                        title: "Wizard AI Strategy", 
+                        exercises: [{ name: "AI Plan", equipment: ["Custom"], reps: aiTextForDownload, sets: "N/A" }] 
+                    } 
+                };
+            } else {
+                const workoutWithStats = lastGeneratedWorkoutPlan.map(ex => {
+                    let sets = (intensity === 'advanced') ? 5 : (intensity === 'beginner' ? 2 : 3);
+                    let reps = (intensity === 'advanced') ? 15 : (intensity === 'beginner' ? 10 : 12);
+                    if (ex.name.toLowerCase().includes("plank")) reps = (intensity === 'advanced') ? "60s" : "30s";
+                    return { ...ex, sets, reps };
+                });
+                payload = { workout_plan: { title: `${intensity.toUpperCase()} Session`, exercises: workoutWithStats } };
+            }
+
+            try {
+                const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("PDF Service is offline.");
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob); // FIXED: Removed extra URL.
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Workout_Plan.pdf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert("PDF Error: " + error.message);
+            } finally {
+                downloadPDFBtn.innerText = "Download (.pdf)";
+                downloadPDFBtn.disabled = false;
+            }
         });
     </script>
 </body>
