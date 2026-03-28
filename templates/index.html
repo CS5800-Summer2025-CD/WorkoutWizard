@@ -46,7 +46,7 @@
         .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI DISPLAY AREA STYLING */
+        /* AI DISPLAY AREA STYLING - RESTORED LIGHT BLUE HEADERS */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
@@ -172,7 +172,7 @@
             }
         });
 
-        // DB Logic
+        // Database Logic
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
@@ -219,7 +219,7 @@
             a.click();
         });
 
-        // PDF FIX (SYNC + LAYOUT)
+        // PDF Generation
         downloadPDFBtn.addEventListener('click', async () => {
             const intensity = document.getElementById('intensitySelect').value;
             downloadPDFBtn.innerText = "Syncing PDF...";
@@ -227,18 +227,16 @@
 
             let payload;
             if (isAiPlan) {
-                // To prevent run-off and keep content same as UI, we split the markdown text
-                // into readable chunks for the PDF's table rows.
                 const rawLines = aiMarkdownContent.split('\n');
                 const pdfRows = [];
 
                 rawLines.forEach(line => {
                     const cleanLine = line.replace(/[#*`\-]/g, '').trim();
                     if (cleanLine.length > 2) {
-                        const chunks = chunkText(cleanLine, 50); // Hard limit characters per row
+                        const chunks = chunkText(cleanLine, 50); 
                         chunks.forEach((chunk, i) => {
                             pdfRows.push({
-                                name: i === 0 ? "•" : "", // Bullet point only on first chunk
+                                name: i === 0 ? "•" : "", 
                                 reps: chunk,
                                 sets: "",
                                 equipment: []

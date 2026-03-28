@@ -3,66 +3,82 @@ import logging
 import json
 import io
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib import colors
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="generate_pdf", methods=["POST"])
 def generate_pdf(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info('Python HTTP trigger function processing a PDF generation request.')
+    logging.info('Processing PDF generation request.')
 
     try:
-        # 1. Attempt to extract the JSON body
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            # Fallback for raw string bodies
-            req_body = json.loads(req.get_body().decode('utf-8'))
-
-        # 2. Robust check: ensure req_body is a dictionary, not a double-encoded string
+        req_body = req.get_json()
         if isinstance(req_body, str):
             req_body = json.loads(req_body)
 
-        # 3. Extract workout data
-        workout_plan = req_body.get('workout_plan')
-        if not workout_plan:
-            return func.HttpResponse("Error: No workout_plan found in request body.", status_code=400)
-
-        # 4. Create the PDF in memory
-        buffer = io.BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-
-        # PDF Styling and Content
-        p.setFont("Helvetica-Bold", 16)
-        p.drawString(100, height - 50, f"Workout Plan: {workout_plan.get('title', 'My Workout')}")
-        
-        p.setFont("Helvetica", 12)
-        y_position = height - 80
-        
+        workout_plan = req_body.get('workout_plan', {})
         exercises = workout_plan.get('exercises', [])
+        title_text = workout_plan.get('title', 'Your Workout Plan')
+
+        buffer = io.BytesIO()
+        # Use SimpleDocTemplate for automatic layout/margins
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        styles = getSampleStyleSheet()
+        
+        # Custom Styles
+        title_style = styles['Heading1']
+        title_style.alignment = 1  # Center
+        
+        item_style = ParagraphStyle(
+            'ItemStyle',
+            parent=styles['Normal'],
+            fontSize=11,
+            leading=14,
+            spaceAfter=10
+        )
+
+        elements = []
+        
+        # Add Title
+        elements.append(Paragraph(f"<b>{title_text}</b>", title_style))
+        elements.append(Spacer(1, 24))
+
         for ex in exercises:
-            line = f"- {ex.get('name')}: {ex.get('sets')} sets x {ex.get('reps')} reps"
-            p.drawString(100, y_position, line)
-            y_position -= 20
-            if y_position < 50:  # Simple page break logic
-                p.showPage()
-                y_position = height - 50
+            name = ex.get('name', '').strip()
+            sets = str(ex.get('sets', '')).strip()
+            reps = str(ex.get('reps', '')).strip()
+            
+            # LOGIC: Only show "sets x reps" if they actually contain numbers/info
+            # Otherwise, just print the text (for AI plans)
+            if sets and reps and sets != "-" and reps != "-":
+                stats = f" — <b>{sets} sets x {reps} reps</b>"
+            else:
+                stats = ""
 
-        p.showPage()
-        p.save()
+            # Build the paragraph string
+            # We use <b> tags for bolding inside Paragraphs
+            text = f"• <b>{name}</b>{stats}"
+            
+            # If there is equipment info, add it
+            equipment = ex.get('equipment', [])
+            if equipment and equipment != ["N/A"] and equipment != ["none"]:
+                text += f"<br/><font color='grey' size='9'>Equipment: {', '.join(equipment)}</font>"
 
-        # 5. Return the PDF file
+            elements.append(Paragraph(text, item_style))
+            elements.append(Spacer(1, 6))
+
+        # Build PDF
+        doc.build(elements)
+
         buffer.seek(0)
         return func.HttpResponse(
             buffer.read(),
             mimetype="application/pdf",
-            headers={
-                "Content-Disposition": "attachment; filename=workout_plan.pdf"
-            }
+            headers={"Content-Disposition": "attachment; filename=workout_plan.pdf"}
         )
 
     except Exception as e:
-        logging.error(f"Error generating PDF: {str(e)}")
-        return func.HttpResponse(f"Internal Server Error: {str(e)}", status_code=500)
+        logging.error(f"Error: {str(e)}")
+        return func.HttpResponse(f"Error generating PDF: {str(e)}", status_code=500)
