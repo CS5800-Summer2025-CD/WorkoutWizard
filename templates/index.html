@@ -20,7 +20,7 @@
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
         
-        /* RESTORED ORIGINAL CSS */
+        /* ORIGINAL CSS RETAINED */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -43,16 +43,14 @@
         .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI CONTENT AREA */
+        /* AI DISPLAY STYLING */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
-            font-size: 1.3rem; font-weight: 800; margin-top: 2.5rem;
-            margin-bottom: 1rem; clear: both;
+            font-size: 1.3rem; font-weight: 800; margin-top: 2rem; margin-bottom: 1rem;
         }
-        .ai-content-area h3 { margin-top: 1.25rem; margin-bottom: 0.25rem; font-weight: 700; color: #4c1d95; font-size: 1.15rem; }
+        .ai-content-area h3 { margin-top: 1.25rem; font-weight: 700; color: #4c1d95; }
         .ai-content-area ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .ai-content-area li { margin-bottom: 0.4rem; line-height: 1.5; display: list-item; }
         .ai-content-area p { margin-bottom: 1rem; line-height: 1.6; }
     </style>
 </head>
@@ -64,7 +62,7 @@
 
         <div class="card bg-purple-50 border-2 border-purple-200 mb-10">
             <h2 class="text-2xl font-bold mb-2 text-purple-800 text-center">Ask the Wizard 🧙‍♂️</h2>
-            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="I need a 30-minute core session..."></textarea>
+            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="Tell the Wizard what you need..."></textarea>
             <div class="flex justify-center">
                 <button id="aiGenerateBtn" class="button-primary bg-gradient-to-r from-purple-500 to-indigo-600">Generate Smart Plan</button>
             </div>
@@ -112,12 +110,12 @@
         </div>
 
         <div class="text-center mb-10">
-            <button id="generateWorkoutBtn" class="button-primary mr-4">Generate Workout</button>
+            <button id="generateWorkoutBtn" class="button-primary mr-4">Generate Workout Plan</button>
             <button id="downloadWorkoutBtn" class="button-primary hidden">Download (.txt)</button>
             <button id="downloadPDFBtn" class="button-primary hidden ml-4">Download (.pdf)</button>
         </div>
 
-        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200">
+        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[100px]">
             <div id="workoutList" class="space-y-4">
                 <p class="text-center text-gray-500">Your results will appear here.</p>
             </div>
@@ -127,16 +125,17 @@
     <script>
         let lastGeneratedWorkoutPlan = [];
         let isAiPlan = false;
-        let rawAiMarkdown = "";
+        let aiMarkdown = "";
 
         const workoutListDiv = document.getElementById('workoutList');
         const downloadTxtBtn = document.getElementById('downloadWorkoutBtn');
         const downloadPDFBtn = document.getElementById('downloadPDFBtn');
 
+        // AI Wizard Logic
         document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
-            if(!prompt) return alert("Please enter a prompt");
-            workoutListDiv.innerHTML = '<p class="text-center italic">Consulting the Wizard...</p>';
+            if(!prompt) return alert("Please ask the Wizard something!");
+            workoutListDiv.innerHTML = '<p class="text-center italic">The Wizard is thinking...</p>';
             
             const response = await fetch('/generate_ai_workout', {
                 method: 'POST',
@@ -146,13 +145,14 @@
             const data = await response.json();
             if(data.success) {
                 isAiPlan = true;
-                rawAiMarkdown = data.ai_plan;
+                aiMarkdown = data.ai_plan;
                 workoutListDiv.innerHTML = `<div class="ai-content-area">${marked.parse(data.ai_plan)}</div>`;
                 downloadTxtBtn.classList.remove('hidden');
                 downloadPDFBtn.classList.remove('hidden');
             }
         });
 
+        // Database Logic (RESTORED ORIGINAL BADGE FORMAT)
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
@@ -189,8 +189,9 @@
             }
         });
 
+        // Download Text
         downloadTxtBtn.addEventListener('click', () => {
-            let content = isAiPlan ? rawAiMarkdown : lastGeneratedWorkoutPlan.map(e => e.name).join('\n');
+            let content = isAiPlan ? aiMarkdown : lastGeneratedWorkoutPlan.map(e => e.name).join('\n');
             const blob = new Blob([content], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -198,6 +199,7 @@
             a.click();
         });
 
+        // PDF FIX: We extract only headers and clean lines to prevent text run-off
         downloadPDFBtn.addEventListener('click', async () => {
             const intensity = document.getElementById('intensitySelect').value;
             downloadPDFBtn.innerText = "Generating...";
@@ -205,28 +207,30 @@
 
             let payload;
             if (isAiPlan) {
-                // CLEAN THE AI TEXT FOR THE PDF ENGINE
-                // We split into sentences and remove Markdown symbols that break layouts
-                const cleanLines = rawAiMarkdown
-                    .split('\n')
-                    .map(line => line.replace(/[#*`\-]/g, '').trim())
-                    .filter(line => line.length > 5);
-
-                const aiRows = cleanLines.map(line => ({
-                    name: line.substring(0, 40) + (line.length > 40 ? "..." : ""),
-                    reps: line.length > 40 ? line : "Instructions above",
-                    sets: "-",
-                    equipment: ["N/A"]
-                }));
-
-                payload = { workout_plan: { title: "Wizard AI Strategy", exercises: aiRows } };
+                // Parse AI markdown to find exercise titles and clean descriptions
+                const lines = aiMarkdown.split('\n');
+                const cleanExercises = [];
+                
+                lines.forEach(line => {
+                    const cleanLine = line.replace(/[#*`\-]/g, '').trim();
+                    if (cleanLine.length > 3) {
+                        // If line is very long, it's a description (reps). If short, it's a name.
+                        cleanExercises.push({
+                            name: cleanLine.length < 40 ? cleanLine : "Instruction",
+                            reps: cleanLine.length >= 40 ? cleanLine.substring(0, 80) + "..." : "See Plan",
+                            sets: "-",
+                            equipment: ["N/A"]
+                        });
+                    }
+                });
+                payload = { workout_plan: { title: "Wizard AI Strategy", exercises: cleanExercises } };
             } else {
                 const exercises = lastGeneratedWorkoutPlan.map(ex => ({
                     ...ex,
                     sets: intensity === 'advanced' ? 5 : (intensity === 'beginner' ? 2 : 3),
                     reps: intensity === 'advanced' ? 15 : (intensity === 'beginner' ? 10 : 12)
                 }));
-                payload = { workout_plan: { title: "Wizard Custom Plan", exercises } };
+                payload = { workout_plan: { title: "Custom Workout", exercises } };
             }
 
             try {
@@ -240,7 +244,7 @@
                 a.href = url;
                 a.download = "Workout_Plan.pdf";
                 a.click();
-            } catch (err) { alert("PDF Service Error"); }
+            } catch (err) { alert("PDF Error"); }
             finally {
                 downloadPDFBtn.innerText = "Download (.pdf)";
                 downloadPDFBtn.disabled = false;
