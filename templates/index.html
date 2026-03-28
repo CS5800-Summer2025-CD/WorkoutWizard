@@ -22,7 +22,7 @@
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
         
-        /* RESTORED ORIGINAL STYLES */
+        /* EXACT ORIGINAL STYLING FROM INDEX_OLD.HTML */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -41,11 +41,12 @@
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
         
+        /* RESTORED CARD STYLING */
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
         .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI-SPECIFIC FORMATTING */
+        /* AI WIZARD MARKDOWN STYLING (The separation fixes) */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
@@ -69,7 +70,7 @@
 
         <div class="card bg-purple-50 border-2 border-purple-200 mb-10">
             <h2 class="text-2xl font-bold mb-2 text-purple-800 text-center">Ask the Wizard 🧙‍♂️</h2>
-            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="I need a custom plan..."></textarea>
+            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="I need a 4-day plan..."></textarea>
             <div class="flex justify-center">
                 <button id="aiGenerateBtn" class="button-primary bg-gradient-to-r from-purple-500 to-indigo-600">Generate Smart Plan</button>
             </div>
@@ -88,7 +89,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Exercise Types</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Exercise Types</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for type in exercise_types %}
                     <div>
@@ -99,7 +100,7 @@
                 </div>
             </div>
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Sports</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Sports</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for sport in sports %}
                     <div>
@@ -110,7 +111,7 @@
                 </div>
             </div>
             <div class="card">
-                <h2 class="section-title text-xl font-bold mb-4 text-center">Muscle Targets</h2>
+                <h3 class="section-title text-xl font-bold mb-4 text-center">Muscle Targets</h3>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for muscle in muscle_targets %}
                     <div>
@@ -123,12 +124,12 @@
         </div>
 
         <div class="text-center mb-10">
-            <button id="generateWorkoutBtn" class="button-primary mr-4">Generate Workout</button>
+            <button id="generateWorkoutBtn" class="button-primary mr-4">Generate Workout Plan</button>
             <button id="downloadWorkoutBtn" class="button-primary hidden">Download (.txt)</button>
             <button id="downloadPDFBtn" class="button-primary hidden ml-4">Download (.pdf)</button>
         </div>
 
-        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[200px]">
+        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200">
             <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Plan 💪</h2>
             <div id="workoutList" class="space-y-4">
                 <p class="text-center text-gray-500">Select options or ask the Wizard to begin.</p>
@@ -139,90 +140,85 @@
     <script>
         let lastGeneratedWorkoutPlan = [];
         let isAiPlan = false;
-        let aiTextForDownload = "";
+        let aiText = "";
 
         const workoutListDiv = document.getElementById('workoutList');
         const downloadTxtBtn = document.getElementById('downloadWorkoutBtn');
         const downloadPDFBtn = document.getElementById('downloadPDFBtn');
 
-        // AI LOGIC
+        // AI WIZARD LOGIC
         document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
-            if(!prompt) return alert("Please enter a prompt");
+            if(!prompt) return alert("Please enter a prompt!");
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-500 italic">Consulting the Wizard...</p>';
             
-            workoutListDiv.innerHTML = '<p class="text-center italic text-gray-500">Consulting the Wizard...</p>';
-            downloadTxtBtn.classList.add('hidden');
-            downloadPDFBtn.classList.add('hidden');
-
-            try {
-                const response = await fetch('/generate_ai_workout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
-                });
-                const data = await response.json();
-                if(data.success) {
-                    isAiPlan = true;
-                    aiTextForDownload = data.ai_plan;
-                    workoutListDiv.innerHTML = `<div class="p-6 bg-white rounded-xl border border-purple-100 shadow-sm ai-content-area">
-                        ${marked.parse(data.ai_plan)}
-                    </div>`;
-                    downloadTxtBtn.classList.remove('hidden');
-                    downloadPDFBtn.classList.remove('hidden');
-                }
-            } catch (err) { alert("AI Service Error"); }
+            const response = await fetch('/generate_ai_workout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+            const data = await response.json();
+            if(data.success) {
+                isAiPlan = true;
+                aiText = data.ai_plan;
+                workoutListDiv.innerHTML = `<div class="p-8 bg-white rounded-2xl border border-purple-100 shadow-sm ai-content-area">
+                    ${marked.parse(data.ai_plan)}
+                </div>`;
+                downloadTxtBtn.classList.remove('hidden');
+                downloadPDFBtn.classList.remove('hidden');
+            }
         });
 
-        // DB LOGIC
+        // REGULAR DB LOGIC (RESTORED EXACT STYLING & BADGES)
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const muscles = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
 
-            workoutListDiv.innerHTML = '<p class="text-center italic text-gray-500">Querying CosmosDB...</p>';
-            downloadTxtBtn.classList.add('hidden');
-            downloadPDFBtn.classList.add('hidden');
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-500 italic">Searching Database...</p>';
 
-            try {
-                const response = await fetch('/generate_workout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles })
+            const response = await fetch('/generate_workout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles })
+            });
+            const data = await response.json();
+            
+            if (data.workout_plan && data.workout_plan.length > 0) {
+                isAiPlan = false;
+                lastGeneratedWorkoutPlan = data.workout_plan;
+                workoutListDiv.innerHTML = '';
+                data.workout_plan.forEach(ex => {
+                    const card = document.createElement('div');
+                    card.className = 'card border border-gray-100 p-6 flex flex-col items-start bg-white rounded-xl shadow-sm mb-4';
+                    card.innerHTML = `
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">${ex.name}</h3>
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            ${ex.types.map(t => `<span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold border border-blue-100 capitalize">${t}</span>`).join('')}
+                            ${ex.sports.map(s => `<span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full font-semibold border border-green-100 capitalize">${s}</span>`).join('')}
+                            ${ex.muscle_targets.map(m => `<span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full font-semibold border border-purple-100 capitalize">${m}</span>`).join('')}
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4"><strong>Equipment:</strong> ${ex.equipment.join(', ')}</p>
+                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm">Watch Demo Video →</a>
+                    `;
+                    workoutListDiv.appendChild(card);
                 });
-                const data = await response.json();
-                
-                if (data.workout_plan && data.workout_plan.length > 0) {
-                    isAiPlan = false;
-                    lastGeneratedWorkoutPlan = data.workout_plan;
-                    workoutListDiv.innerHTML = '';
-                    data.workout_plan.forEach(ex => {
-                        const div = document.createElement('div');
-                        div.className = 'card border border-gray-100 p-6 mb-4';
-                        div.innerHTML = `<h3 class="text-xl font-bold mb-2">${ex.name}</h3>
-                            <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${ex.equipment.join(', ')}</p>
-                            <a href="${ex.youtube_link}" target="_blank" class="youtube-link">Watch Demo Video →</a>`;
-                        workoutListDiv.appendChild(div);
-                    });
-                    downloadTxtBtn.classList.remove('hidden');
-                    downloadPDFBtn.classList.remove('hidden');
-                } else {
-                    workoutListDiv.innerHTML = `<p class="text-center text-red-500">${data.message || 'No matches found.'}</p>`;
-                }
-            } catch (error) { alert("Database Error"); }
+                downloadTxtBtn.classList.remove('hidden');
+                downloadPDFBtn.classList.remove('hidden');
+            }
         });
 
         // DOWNLOAD TXT
         downloadTxtBtn.addEventListener('click', () => {
-            let content = isAiPlan ? aiTextForDownload : lastGeneratedWorkoutPlan.map((e, i) => `${i+1}. ${e.name}`).join('\n');
+            let content = isAiPlan ? aiText : lastGeneratedWorkoutPlan.map((ex, i) => `${i+1}. ${ex.name} - Equipment: ${ex.equipment.join(', ')}`).join('\n');
             const blob = new Blob([content], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `Workout_Plan_${new Date().toISOString().slice(0,10)}.txt`;
             a.click();
-            URL.revokeObjectURL(a.href);
         });
 
-        // DOWNLOAD PDF (FIXED)
+        // DOWNLOAD PDF (FIXED URL LOGIC)
         downloadPDFBtn.addEventListener('click', async () => {
             const intensity = document.getElementById('intensitySelect').value;
             downloadPDFBtn.innerText = "Generating PDF...";
@@ -230,18 +226,11 @@
 
             let payload;
             if (isAiPlan) {
-                // Formatting AI plan into a structure the PDF function can parse
-                payload = { 
-                    workout_plan: { 
-                        title: "Wizard AI Strategy", 
-                        exercises: [{ name: "AI Plan", equipment: ["Custom"], reps: aiTextForDownload, sets: "N/A" }] 
-                    } 
-                };
+                payload = { workout_plan: { title: "Wizard AI Strategy", exercises: [{ name: "AI Plan", equipment: ["Custom"], reps: aiText, sets: "" }] } };
             } else {
                 const workoutWithStats = lastGeneratedWorkoutPlan.map(ex => {
                     let sets = (intensity === 'advanced') ? 5 : (intensity === 'beginner' ? 2 : 3);
                     let reps = (intensity === 'advanced') ? 15 : (intensity === 'beginner' ? 10 : 12);
-                    if (ex.name.toLowerCase().includes("plank")) reps = (intensity === 'advanced') ? "60s" : "30s";
                     return { ...ex, sets, reps };
                 });
                 payload = { workout_plan: { title: `${intensity.toUpperCase()} Session`, exercises: workoutWithStats } };
@@ -253,21 +242,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                if (!response.ok) throw new Error("PDF Service is offline.");
-
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob); // FIXED: Removed extra URL.
+                const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = "Workout_Plan.pdf";
                 document.body.appendChild(a);
                 a.click();
-                document.body.removeChild(a);
+                a.remove();
                 window.URL.revokeObjectURL(url);
-            } catch (error) {
-                alert("PDF Error: " + error.message);
-            } finally {
+            } catch (err) { alert("PDF Error"); }
+            finally {
                 downloadPDFBtn.innerText = "Download (.pdf)";
                 downloadPDFBtn.disabled = false;
             }
