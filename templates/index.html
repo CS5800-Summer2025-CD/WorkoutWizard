@@ -22,7 +22,7 @@
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
 
-        /* ORIGINAL CSS FROM INDEX_OLD.HTML */
+        /* CSS FROM index_ai_css.html */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -41,12 +41,11 @@
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
         
-        /* CARD STYLING */
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
         .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI DISPLAY AREA STYLING - RESTORED LIGHT BLUE HEADERS */
+        /* AI DISPLAY AREA STYLING */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
@@ -113,14 +112,14 @@
         </div>
 
         <div class="text-center mb-10">
-            <button id="generateWorkoutBtn" class="button-primary mr-4">Generate Simple Workout</button>
+            <button id="generateWorkoutBtn" class="button-primary mr-4">Manual Search</button>
             <button id="downloadWorkoutBtn" class="button-primary hidden">Download (.txt)</button>
             <button id="downloadPDFBtn" class="button-primary hidden ml-4">Download (.pdf)</button>
         </div>
 
         <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200">
             <div id="workoutList" class="space-y-4">
-                <p class="text-center text-gray-500">Your plan will appear here.</p>
+                <p class="text-center text-gray-500">Select options or ask the Wizard.</p>
             </div>
         </div>
     </div>
@@ -134,8 +133,7 @@
         const downloadTxtBtn = document.getElementById('downloadWorkoutBtn');
         const downloadPDFBtn = document.getElementById('downloadPDFBtn');
 
-        // Text Wrapping Helper for PDF Table
-        function chunkText(text, size = 45) {
+        function chunkText(text, size = 50) {
             const words = text.split(' ');
             let lines = [];
             let currentLine = '';
@@ -151,11 +149,11 @@
             return lines;
         }
 
-        // AI Logic
+        // AI Wizard Logic
         document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
-            if(!prompt) return alert("Please talk to the Wizard first!");
-            workoutListDiv.innerHTML = '<p class="text-center italic">The Wizard is crafting your plan...</p>';
+            if(!prompt) return alert("Talk to the Wizard first!");
+            workoutListDiv.innerHTML = '<p class="text-center italic">Consulting the Wizard...</p>';
             
             const response = await fetch('/generate_ai_workout', {
                 method: 'POST',
@@ -172,7 +170,7 @@
             }
         });
 
-        // Database Logic
+        // Manual Search Logic
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
@@ -191,16 +189,11 @@
                 workoutListDiv.innerHTML = '';
                 data.workout_plan.forEach(ex => {
                     const card = document.createElement('div');
-                    card.className = 'card border border-gray-100 p-6 flex flex-col items-start bg-white rounded-xl shadow-sm mb-4';
+                    card.className = 'card border border-gray-100 p-6 flex flex-col items-start mb-4';
                     card.innerHTML = `
-                        <h3 class="text-xl font-bold text-gray-800 mb-3">${ex.name}</h3>
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            ${ex.types.map(t => `<span class="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold border border-blue-100 capitalize">${t}</span>`).join('')}
-                            ${ex.sports.map(s => `<span class="bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full font-semibold border border-green-100 capitalize">${s}</span>`).join('')}
-                            ${ex.muscle_targets.map(m => `<span class="bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded-full font-semibold border border-purple-100 capitalize">${m}</span>`).join('')}
-                        </div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${ex.name}</h3>
                         <p class="text-gray-600 text-sm mb-4"><strong>Equipment:</strong> ${ex.equipment.join(', ')}</p>
-                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link text-sm">Watch Demo Video →</a>
+                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link text-sm">Watch Demo →</a>
                     `;
                     workoutListDiv.appendChild(card);
                 });
@@ -227,18 +220,19 @@
 
             let payload;
             if (isAiPlan) {
+                // Prepare AI Markdown for the simple PDF service
                 const rawLines = aiMarkdownContent.split('\n');
                 const pdfRows = [];
 
                 rawLines.forEach(line => {
                     const cleanLine = line.replace(/[#*`\-]/g, '').trim();
-                    if (cleanLine.length > 2) {
-                        const chunks = chunkText(cleanLine, 50); 
+                    if (cleanLine.length > 1) {
+                        const chunks = chunkText(cleanLine, 45); 
                         chunks.forEach((chunk, i) => {
                             pdfRows.push({
-                                name: i === 0 ? "•" : "", 
+                                name: i === 0 ? "•" : " ", 
                                 reps: chunk,
-                                sets: "",
+                                sets: " ", // Use a space to prevent the backend from printing "undefined"
                                 equipment: []
                             });
                         });
@@ -256,7 +250,8 @@
 
             try {
                 const response = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const blob = await response.blob();
@@ -265,7 +260,7 @@
                 a.href = url;
                 a.download = "Workout_Plan.pdf";
                 a.click();
-            } catch (err) { alert("PDF Error"); }
+            } catch (err) { alert("PDF Error: " + err); }
             finally {
                 downloadPDFBtn.innerText = "Download (.pdf)";
                 downloadPDFBtn.disabled = false;
