@@ -91,7 +91,7 @@ def generate_ai_workout():
             # Fallback if no specific matches are found in the database
             exercise_context = "No specific database matches found. Suggest general safe movements."
 
-        # 3. GENERATION: Call Groq with the contextualized prompt
+        # 3. GENERATION: Updated Prompt for better parsing and no double bullets
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
@@ -100,12 +100,17 @@ def generate_ai_workout():
                     "content": f"""You are the Workout Wizard AI. 
                     Use ONLY these exercises: {exercise_context}
                     
-                    STRICT FORMATTING RULES:
-                    1. Use '## Day Name' for main day headers (e.g., ## Monday: Endurance).
-                    2. Use '### Exercise Name' for specific exercises.
-                    3. ALWAYS use bolding for **Warm-up** and **Cool-down**.
-                    4. Each instruction MUST be a separate bullet point starting with '- '.
-                    5. Do not add extra empty lines between an exercise title and its first bullet.
+                    FORMATTING RULES:
+                    1. Use '## ' for Day Headers (e.g. ## Monday).
+                    2. Use '### ' for Exercise Titles.
+                    3. For instructions/details, use a SINGLE asterisk (*) followed by one space.
+                    4. NEVER use hyphens (-) or multiple symbols like '*-' or '--'.
+                    5. Keep it concise and readable.
+                    
+                    Example:
+                    ### Pushups
+                    * 3 sets of 12 reps
+                    * Keep back straight
                     """
                 },
                 {"role": "user", "content": user_prompt}
