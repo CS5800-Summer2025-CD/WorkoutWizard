@@ -22,7 +22,7 @@
         .container { max-width: 900px; }
         .section-title { color: #1e3a8a; }
 
-        /* RESTORED CSS FROM INDEX_OLD.HTML */
+        /* DATABASE SEARCH STYLES */
         .checkbox-label {
             cursor: pointer; padding: 8px 12px; border-radius: 9999px; 
             border: 1px solid #d1d5db; transition: all 0.2s ease-in-out; display: inline-block; 
@@ -38,22 +38,39 @@
             color: white; padding: 12px 24px; border-radius: 9999px;
             font-weight: 600; transition: all 0.3s ease-in-out;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: none;
+            display: flex; align-items: center; justify-content: center;
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
-        
+        .button-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+        .button-secondary {
+            background-color: #e2e8f0; color: #475569; padding: 12px 24px; 
+            border-radius: 9999px; font-weight: 600; transition: all 0.2s;
+        }
+        .button-secondary:hover { background-color: #cbd5e1; }
+
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
-        .youtube-link { color: #3b82f6; text-decoration: none; }
+        .youtube-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
         .youtube-link:hover { text-decoration: underline; }
 
-        /* AI DISPLAY AREA STYLING */
+        /* AI DISPLAY FORMATTING */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
             font-size: 1.3rem; font-weight: 800; margin-top: 2rem; margin-bottom: 1rem;
         }
-        .ai-content-area h3 { margin-top: 1.25rem; font-weight: 700; color: #4c1d95; }
+        .ai-content-area h3 { margin-top: 1.25rem; font-weight: 700; color: #4c1d95; font-size: 1.15rem; }
         .ai-content-area ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .ai-content-area p { margin-bottom: 1rem; line-height: 1.6; }
+        .ai-content-area li { margin-bottom: 0.4rem; color: #374151; }
+
+        /* SPINNER */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%; border-top: 3px solid #fff;
+            width: 18px; height: 18px; animation: spin 0.8s linear infinite;
+            display: inline-block; margin-right: 10px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-6">
@@ -64,72 +81,75 @@
 
         <div class="card bg-purple-50 border-2 border-purple-200 mb-10">
             <h2 class="text-2xl font-bold mb-2 text-purple-800 text-center">Ask the Wizard 🧙‍♂️</h2>
-            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="I need a 10-minute HIIT session..."></textarea>
+            <textarea id="aiPrompt" class="w-full p-4 border rounded-xl focus:ring-2 focus:ring-purple-400 outline-none mb-4" rows="3" placeholder="E.g. I want a 15 minute core workout using no equipment..."></textarea>
             <div class="flex justify-center">
-                <button id="aiGenerateBtn" class="button-primary bg-gradient-to-r from-purple-500 to-indigo-600">Generate Smart Workout</button>
+                <button id="aiGenerateBtn" class="button-primary bg-gradient-to-r from-purple-500 to-indigo-600">
+                    <span id="btnSpinner" class="spinner hidden"></span>
+                    <span id="btnText">Generate Smart Workout</span>
+                </button>
             </div>
-        </div>
-
-        <div class="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-200 text-center">
-            <p class="text-lg text-gray-700">Select attributes and intensity for a manual search!</p>
         </div>
 
         <div class="card mb-10">
             <h2 class="section-title text-2xl font-bold mb-4 text-center">Workout Intensity</h2>
             <div class="flex justify-center">
-                <select id="intensitySelect" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 w-64">
-                    <option value="beginner">Beginner (Low Volume)</option>
-                    <option value="intermediate" selected>Intermediate (Standard)</option>
-                    <option value="advanced">Advanced (High Volume)</option>
+                <select id="intensitySelect" class="bg-gray-50 border border-gray-300 text-sm rounded-lg p-2.5 w-64 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate" selected>Intermediate</option>
+                    <option value="advanced">Advanced</option>
                 </select>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
             <div class="card">
-                <h2 class="section-title text-2xl font-bold mb-4 text-center">Exercise Types</h2>
+                <h2 class="section-title text-xl font-bold mb-4 text-center">Exercise Types</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for type in exercise_types %}
-                    <div>
-                        <input type="checkbox" id="type-{{ type }}" name="exercise_type" value="{{ type }}">
-                        <label for="type-{{ type }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ type }}</label>
-                    </div>
+                    <input type="checkbox" id="type-{{ type }}" name="exercise_type" value="{{ type }}">
+                    <label for="type-{{ type }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ type }}</label>
                     {% endfor %}
                 </div>
             </div>
             <div class="card">
-                <h2 class="section-title text-2xl font-bold mb-4 text-center">Sports Specific</h2>
+                <h2 class="section-title text-xl font-bold mb-4 text-center">Sports</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for sport in sports %}
-                    <div>
-                        <input type="checkbox" id="sport-{{ sport }}" name="sport" value="{{ sport }}">
-                        <label for="sport-{{ sport }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ sport }}</label>
-                    </div>
+                    <input type="checkbox" id="sport-{{ sport }}" name="sport" value="{{ sport }}">
+                    <label for="sport-{{ sport }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ sport }}</label>
                     {% endfor %}
                 </div>
             </div>
             <div class="card">
-                <h2 class="section-title text-2xl font-bold mb-4 text-center">Muscle Targets</h2>
+                <h2 class="section-title text-xl font-bold mb-4 text-center">Muscles</h2>
                 <div class="flex flex-wrap gap-2 justify-center">
                     {% for muscle in muscle_targets %}
-                    <div>
-                        <input type="checkbox" id="muscle-{{ muscle }}" name="muscle_target" value="{{ muscle }}">
-                        <label for="muscle-{{ muscle }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ muscle }}</label>
-                    </div>
+                    <input type="checkbox" id="muscle-{{ muscle }}" name="muscle_target" value="{{ muscle }}">
+                    <label for="muscle-{{ muscle }}" class="checkbox-label text-gray-700 text-sm capitalize">{{ muscle }}</label>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
-        <div class="text-center mb-10">
-            <button id="generateWorkoutBtn" class="button-primary mr-4">Manual Search</button>
-            <button id="downloadWorkoutBtn" class="button-primary hidden">Download (.txt)</button>
-            <button id="downloadPDFBtn" class="button-primary hidden ml-4">Download (.pdf)</button>
+        <div class="flex flex-col items-center justify-center gap-6 mb-12">
+            <div class="flex flex-wrap justify-center gap-4">
+                <button id="generateWorkoutBtn" class="button-primary">Database Search</button>
+                <button id="clearResultsBtn" class="button-secondary">Clear Results</button>
+            </div>
+
+            <div id="downloadActions" class="hidden flex flex-col items-center w-full max-w-md pt-6 border-t border-gray-100">
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Export Options</p>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <button id="downloadWorkoutBtn" class="button-primary bg-gradient-to-r from-gray-600 to-gray-700">Download (.txt)</button>
+                    <button id="downloadPDFBtn" class="button-primary bg-gradient-to-r from-blue-700 to-indigo-800">Download (.pdf)</button>
+                </div>
+            </div>
         </div>
 
-        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[200px]">
+        <div id="workoutPlan" class="mt-8 p-6 bg-white rounded-xl shadow-inner border border-gray-200 min-h-[150px]">
+            <div id="workoutListTitle"></div>
             <div id="workoutList" class="space-y-4">
-                <p class="text-center text-gray-600">Select attributes and click "Manual Search" to see your plan!</p>
+                <p class="text-center text-gray-400">Your results will appear here.</p>
             </div>
         </div>
     </div>
@@ -140,136 +160,147 @@
         let aiMarkdownContent = "";
 
         const workoutListDiv = document.getElementById('workoutList');
-        const downloadTxtBtn = document.getElementById('downloadWorkoutBtn');
-        const downloadPDFBtn = document.getElementById('downloadPDFBtn');
+        const workoutListTitle = document.getElementById('workoutListTitle');
+        const downloadActions = document.getElementById('downloadActions');
+        const aiBtn = document.getElementById('aiGenerateBtn');
 
-        function chunkText(text, size = 50) {
-            const words = text.split(' ');
-            let lines = [];
-            let currentLine = '';
-            words.forEach(word => {
-                if ((currentLine + word).length > size) {
-                    lines.push(currentLine.trim());
-                    currentLine = word + ' ';
-                } else {
-                    currentLine += word + ' ';
-                }
-            });
-            lines.push(currentLine.trim());
-            return lines;
-        }
-
-        // AI Wizard Handler
-        document.getElementById('aiGenerateBtn').addEventListener('click', async () => {
-            const prompt = document.getElementById('aiPrompt').value;
-            if(!prompt) return alert("Talk to the Wizard first!");
-            workoutListDiv.innerHTML = '<p class="text-center italic text-gray-500">Consulting the Wizard...</p>';
-            
-            const response = await fetch('/generate_ai_workout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
-            const data = await response.json();
-            if(data.success) {
-                isAiPlan = true;
-                aiMarkdownContent = data.ai_plan;
-                workoutListDiv.innerHTML = `
-                    <div class="ai-content-area">
-                        <h3 class="text-2xl font-bold text-purple-800 mb-6 border-b pb-4">Wizard's Custom Strategy</h3>
-                        ${marked.parse(data.ai_plan)}
-                    </div>`;
-                downloadTxtBtn.classList.remove('hidden');
-                downloadPDFBtn.classList.remove('hidden');
-            }
+        // CLEAR RESULTS
+        document.getElementById('clearResultsBtn').addEventListener('click', () => {
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-400">Your results will appear here.</p>';
+            workoutListTitle.innerHTML = '';
+            downloadActions.classList.add('hidden');
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.getElementById('aiPrompt').value = '';
+            isAiPlan = false;
         });
 
-        // RESTORED: Manual Database Handler from index_old.html
-        document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
-            const selectedTypes = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
-            const selectedSports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
-            const selectedMuscleTargets = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
-
-            workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Generating workout...</p>';
+        // AI SEARCH
+        aiBtn.addEventListener('click', async () => {
+            const prompt = document.getElementById('aiPrompt').value;
+            if(!prompt) return alert("Please enter a prompt!");
+            
+            aiBtn.disabled = true;
+            document.getElementById('btnSpinner').classList.remove('hidden');
+            document.getElementById('btnText').innerText = "Consulting the Wizard...";
 
             try {
-                const response = await fetch('/generate_workout', {
+                const response = await fetch('/generate_ai_workout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        selected_types: selectedTypes,
-                        selected_sports: selectedSports,
-                        selected_muscle_targets: selectedMuscleTargets
-                    }),
+                    body: JSON.stringify({ prompt })
                 });
                 const data = await response.json();
                 
-                if (data.workout_plan && data.workout_plan.length > 0) {
-                    isAiPlan = false;
-                    lastGeneratedWorkoutPlan = data.workout_plan;
-                    workoutListDiv.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Generated Workout 💪</h2>';
+                if(data.success) {
+                    isAiPlan = true;
+                    aiMarkdownContent = data.ai_plan;
+                    const sanitized = data.ai_plan.replace(/^[\s\-\*•]{2,}/gm, '* ');
                     
-                    data.workout_plan.forEach(exercise => {
-                        const exerciseCard = document.createElement('div');
-                        exerciseCard.className = 'card border border-blue-100 p-4 flex flex-col items-start';
-                        exerciseCard.innerHTML = `
-                            <h3 class="text-xl font-semibold text-gray-800 mb-2">${exercise.name}</h3>
-                            <p class="text-gray-600 text-sm mb-1"><strong>Types:</strong> ${exercise.types.map(t => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${t}</span>`).join('')}</p>
-                            ${exercise.sports.length > 0 ? `<p class="text-gray-600 text-sm mb-1"><strong>Sports:</strong> ${exercise.sports.map(s => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${s}</span>`).join('')}</p>` : ''}
-                            ${exercise.muscle_targets.length > 0 ? `<p class="text-gray-600 text-sm mb-1"><strong>Muscles:</strong> ${exercise.muscle_targets.map(m => `<span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${m}</span>`).join('')}</p>` : ''}
-                            <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${exercise.equipment.join(', ')}</p>
-                            <a href="${exercise.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1">
-                                    <path d="M19.5 5.25a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v13.5a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3V5.25ZM15.75 12l-4.5 4.5V7.5l4.5 4.5Z" />
-                                </svg>
-                                Watch Demo Video
-                            </a>
-                        `;
-                        workoutListDiv.appendChild(exerciseCard);
-                    });
-                    downloadTxtBtn.classList.remove('hidden');
-                    downloadPDFBtn.classList.remove('hidden');
+                    // TITLE RESTORED
+                    workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Wizard\'s Custom Strategy 🧙‍♂️</h2>';
+                    workoutListDiv.innerHTML = `<div class="ai-content-area">${marked.parse(sanitized)}</div>`;
+                    downloadActions.classList.remove('hidden');
+                    downloadActions.classList.add('flex'); // Switch from hidden to flex
                 } else {
-                    workoutListDiv.innerHTML = '<p class="text-center text-gray-600">No exercises found matching your criteria.</p>';
+                    workoutListDiv.innerHTML = '<p class="text-center text-red-500">Failed to generate workout.</p>';
                 }
-            } catch (error) {
-                workoutListDiv.innerHTML = '<p class="text-center text-red-500">An error occurred. Please try again.</p>';
+            } catch (err) {
+                workoutListDiv.innerHTML = '<p class="text-center text-red-500">Error connecting to Wizard.</p>';
+            } finally {
+                aiBtn.disabled = false;
+                document.getElementById('btnSpinner').classList.add('hidden');
+                document.getElementById('btnText').innerText = "Generate Smart Workout";
             }
         });
 
-        // Download as TXT
-        downloadTxtBtn.addEventListener('click', () => {
-            let content = isAiPlan ? aiMarkdownContent : lastGeneratedWorkoutPlan.map(e => e.name).join('\n');
-            const blob = new Blob([content], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = "My_Workout_Plan.txt";
-            a.click();
+        // DATABASE SEARCH
+        document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
+            const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
+            const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
+            const muscles = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
+
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Searching database...</p>';
+            
+            const response = await fetch('/generate_workout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles }),
+            });
+            const data = await response.json();
+            
+            if (data.workout_plan && data.workout_plan.length > 0) {
+                isAiPlan = false;
+                lastGeneratedWorkoutPlan = data.workout_plan;
+                workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Database Workout 💪</h2>';
+                workoutListDiv.innerHTML = '';
+                
+                data.workout_plan.forEach(ex => {
+                    const card = document.createElement('div');
+                    card.className = 'card border border-blue-100 p-6 flex flex-col items-start mb-4 w-full';
+                    
+                    const typesHtml = ex.types ? ex.types.map(t => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1 font-semibold">${t}</span>`).join('') : 'None';
+                    const sportsHtml = ex.sports && ex.sports.length > 0 ? ex.sports.map(s => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1 font-semibold">${s}</span>`).join('') : '<span class="text-gray-400 italic">None</span>';
+                    const musclesHtml = ex.muscle_targets && ex.muscle_targets.length > 0 ? ex.muscle_targets.map(m => `<span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1 font-semibold">${m}</span>`).join('') : '<span class="text-gray-400 italic">None</span>';
+                    
+                    card.innerHTML = `
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">${ex.name}</h3>
+                        <div class="space-y-1 mb-4">
+                            <p class="text-gray-600 text-sm"><strong>Types:</strong> ${typesHtml}</p>
+                            <p class="text-gray-600 text-sm"><strong>Sports:</strong> ${sportsHtml}</p>
+                            <p class="text-gray-600 text-sm"><strong>Muscles:</strong> ${musclesHtml}</p>
+                            <p class="text-gray-600 text-sm"><strong>Equipment:</strong> ${ex.equipment && ex.equipment.length > 0 ? ex.equipment.join(', ') : 'None'}</p>
+                        </div>
+                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm bg-blue-50 px-3 py-1.5 rounded-lg">
+                            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 5.25a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v13.5a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3V5.25ZM15.75 12l-4.5 4.5V7.5l4.5 4.5Z" /></svg>
+                            Watch Exercise Demo
+                        </a>`;
+                    workoutListDiv.appendChild(card);
+                });
+                downloadActions.classList.remove('hidden');
+                downloadActions.classList.add('flex');
+            } else {
+                workoutListDiv.innerHTML = '<p class="text-center text-gray-500">No exercises found. Try selecting different filters!</p>';
+            }
         });
 
-        // Download as PDF with improved handling for AI vs Manual
-        downloadPDFBtn.addEventListener('click', async () => {
-            const intensity = document.getElementById('intensitySelect').value;
-            downloadPDFBtn.innerText = "Generating PDF...";
-            downloadPDFBtn.disabled = true;
+        // DOWNLOAD TXT
+        document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
+            let content = "Workout Plan\n\n";
+            if (isAiPlan) {
+                content += aiMarkdownContent;
+            } else {
+                const intensity = document.getElementById('intensitySelect').value;
+                const sets = intensity === 'advanced' ? 5 : (intensity === 'beginner' ? 2 : 3);
+                const reps = intensity === 'advanced' ? 15 : (intensity === 'beginner' ? 10 : 12);
+                content += `Intensity Level: ${intensity.toUpperCase()}\n\n`;
+                lastGeneratedWorkoutPlan.forEach(ex => {
+                    content += `- ${ex.name}: ${sets} sets x ${reps} reps\n`;
+                });
+            }
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "Workout_Plan.txt";
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+
+        // DOWNLOAD PDF (Azure Route)
+        document.getElementById('downloadPDFBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('downloadPDFBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "Generating...";
+            btn.disabled = true;
 
             let payload;
+            const intensity = document.getElementById('intensitySelect').value;
+
             if (isAiPlan) {
-                const rawLines = aiMarkdownContent.split('\n');
-                const pdfRows = [];
-                rawLines.forEach(line => {
-                    const cleanLine = line.replace(/[#*`\-]/g, '').trim();
-                    if (cleanLine.length > 1) {
-                        const chunks = chunkText(cleanLine, 55); 
-                        chunks.forEach((chunk, i) => {
-                            pdfRows.push({
-                                name: i === 0 ? "•" : " ", 
-                                reps: chunk,
-                                sets: "" // Triggers "AI text mode" in Python
-                            });
-                        });
-                    }
-                });
+                const pdfRows = aiMarkdownContent.split('\n')
+                    .map(line => line.replace(/^[#*\-•\s\d+\.]+/, '').trim())
+                    .filter(line => line.length > 0)
+                    .map(line => ({ name: line, reps: "", sets: "" }));
                 payload = { workout_plan: { title: "Wizard AI Strategy", exercises: pdfRows } };
             } else {
                 const exercises = lastGeneratedWorkoutPlan.map(ex => ({
@@ -286,16 +317,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                if (!response.ok) throw new Error("PDF Service Unavailable");
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = "Workout_Plan.pdf";
                 a.click();
-            } catch (err) { alert("PDF Error: " + err); }
+            } catch (err) { alert("PDF Error: " + err.message); }
             finally {
-                downloadPDFBtn.innerText = "Download (.pdf)";
-                downloadPDFBtn.disabled = false;
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         });
     </script>
