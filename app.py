@@ -10,150 +10,80 @@ from groq import Groq
 load_dotenv()
 
 # Initialize Groq Client
-# Ensure GROQ_API_KEY is set in your .env or Azure Environment Variables
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# Configure Azure Monitor for Application Insights
+# Configure Azure Monitor
 app_insights_string = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")
 if app_insights_string:
     configure_azure_monitor() 
-else:
-    print("Warning: APPLICATIONINSIGHTS_CONNECTION_STRING not found. Azure Monitor disabled.")
 
-# 2. Setup logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 app = Flask(__name__)
 workout_service = WorkoutService()
 
-# Constants for Keyword Extraction based on your database schema
+# Metadata for UI filters
 EXERCISE_TYPES = ["strength", "stability", "recovery", "cardio", "circuit", "anaerobic", "flexibility"]
 SPORTS = ["swimming", "running", "biking", "yoga"]
 MUSCLE_TARGETS = ["shoulder", "upper body", "upper back", "chest", "triceps", "core", "full body", "legs", "glutes"]
 
 def extract_keywords(prompt):
-    """
-    Phase 3 Logic: Scans the user's natural language input to match 
-    categories in the workout database.
-    """
     prompt_lower = prompt.lower()
-    found_types = [t for t in EXERCISE_TYPES if t in prompt_lower]
-    found_sports = [s for s in SPORTS if s in prompt_lower]
-    found_muscles = [m for m in MUSCLE_TARGETS if m in prompt_lower]
-    
-    # Safety Guardrail: If user mentions pain/injury, prioritize recovery exercises
-    if any(word in prompt_lower for word in ["pain", "hurt", "sore", "injury"]):
-        if "recovery" not in found_types:
-            found_types.append("recovery")
-            
-    return found_types, found_sports, found_muscles
+    return {
+        "types": [t for t in EXERCISE_TYPES if t in prompt_lower],
+        "sports": [s for s in SPORTS if s in prompt_lower],
+        "muscles": [m for m in MUSCLE_TARGETS if m in prompt_lower]
+    }
 
 @app.route('/')
 def index():
-    # Lists used to populate the manual filter UI
-    exercise_types = EXERCISE_TYPES
-    sports = SPORTS + ["none"]
-    muscle_targets = MUSCLE_TARGETS
-
     return render_template('index.html', 
-                           exercise_types=exercise_types, 
-                           sports=sports, 
-                           muscle_targets=muscle_targets)
+                           exercise_types=EXERCISE_TYPES, 
+                           sports=SPORTS, 
+                           muscle_targets=MUSCLE_TARGETS)
 
 @app.route('/generate_ai_workout', methods=['POST'])
 def generate_ai_workout():
-    """
-    Phase 3: AI Synthesis Engine (RAG Implementation)
-    Retrieves real exercises from the DB and feeds them to the AI.
-    """
     data = request.json
-    user_prompt = data.get('prompt', "")
-
-    if not user_prompt:
-        return jsonify({"success": False, "error": "No prompt provided"}), 400
+    user_prompt = data.get('prompt', '')
 
     try:
-        # 1. RETRIEVAL: Match user keywords to database categories
-        f_types, f_sports, f_muscles = extract_keywords(user_prompt)
+        keywords = extract_keywords(user_prompt)
+        context_plan, _ = workout_service.generate_plan(
+            selected_types=keywords["types"],
+            selected_sports=keywords["sports"],
+            selected_muscle_targets=keywords["muscles"]
+        )
         
-        # Query the WorkoutService (CosmosDB) for approved exercises
-        approved_exercises, error = workout_service.generate_plan(f_types, f_sports, f_muscles)
+        exercise_context = ", ".join([ex['name'] for ex in context_plan[:10]]) if context_plan else "general exercises"
 
-        # 2. AUGMENTATION: Build the context for the AI
-        if approved_exercises:
-            exercise_context = "Use ONLY these approved exercises from our database:\n"
-            exercise_context += "\n".join([
-                f"- {ex['name']} (Equipment: {', '.join(ex['equipment'])})" 
-                for ex in approved_exercises
-            ])
-        else:
-            # Fallback if no specific matches are found in the database
-            exercise_context = "No specific database matches found. Suggest general safe movements."
-
-        # 3. GENERATION: Updated Prompt for better parsing and no double bullets
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
                 {
                     "role": "system", 
-                    "content": f"""You are the Workout Wizard AI. 
-                    Use ONLY these exercises: {exercise_context}
-                    
-                    FORMATTING RULES:
-                    1. Use '## ' for Day Headers (e.g. ## Monday).
-                    2. Use '### ' for Exercise Titles.
-                    3. For instructions/details, use a SINGLE asterisk (*) followed by one space.
-                    4. NEVER use hyphens (-) or multiple symbols like '*-' or '--'.
-                    5. Keep it concise and readable.
-                    
-                    Example:
-                    ### Pushups
-                    * 3 sets of 12 reps
-                    * Keep back straight
-                    """
+                    "content": f"""You are the Workout Wizard. Use these exercises: {exercise_context}.
+                    Rules: Use '## ' for Day Headers, '### ' for Exercise names, and a SINGLE '*' for details. 
+                    No double bullets."""
                 },
                 {"role": "user", "content": user_prompt}
             ]
         )
         
-        ai_plan = completion.choices[0].message.content
-        return jsonify({"success": True, "ai_plan": ai_plan})
-
+        return jsonify({"success": True, "ai_plan": completion.choices[0].message.content})
     except Exception as e:
-        logger.error(f"AI Generation Error: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/generate_workout', methods=['POST'])
 def generate():
-    """Manual filter workout generation (Standard Phase 2 logic)"""
     data = request.json
-    selected_types = data.get('selected_types', [])
-    selected_sports = data.get('selected_sports', [])
-    selected_muscle_targets = data.get('selected_muscle_targets', [])
-
-    # Log the request
-    logger.info(f"Generating workout for: {selected_types}, {selected_sports}, {selected_muscle_targets}")
-
-    if not selected_types and not selected_sports and not selected_muscle_targets:
-        return jsonify({
-            "workout_plan": [],
-            "message": "Please select at least one attribute to generate a workout."
-        }), 200
-
     plan, error = workout_service.generate_plan(
-        selected_types, 
-        selected_sports, 
-        selected_muscle_targets
+        data.get('selected_types', []), 
+        data.get('selected_sports', []), 
+        data.get('selected_muscle_targets', [])
     )
-
-    if error:
-        return jsonify({
-            "workout_plan": [],
-            "message": error
-        }), 200
-
-    return jsonify({"workout_plan": plan})
+    return jsonify({"workout_plan": plan or [], "message": error})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
