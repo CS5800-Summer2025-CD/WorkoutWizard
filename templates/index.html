@@ -251,15 +251,10 @@
 
             if (isAiPlan) {
                 const pdfRows = aiMarkdownContent.split('\n')
-                    .map(line => {
-                        return line
-                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Remove leading markers
-                            .replace(/[*_#$]/g, '')             // Remove ANY remaining markdown/LaTeX symbols
-                            .replace(/\\times/g, 'x')           // Convert LaTeX times to 'x'
-                            .trim();
-                    })
+                    .map(line => line.trim())
                     .filter(l => l.length > 0)
-                    .map(l => ({ name: l, reps: "", sets: "" }));
+                    // We keep the # and - symbols so the PDF generator can see them
+                    .map(l => ({ name: l, reps: "AI_MODE", sets: "" }));
                     
                 payload = { workout_plan: { title: "Wizard AI Strategy", exercises: pdfRows } };
             } else {
