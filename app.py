@@ -49,6 +49,7 @@ def generate_ai_workout():
     user_prompt = data.get('prompt', '')
 
     try:
+        # Extract keywords to pull relevant exercises from your DB
         keywords = extract_keywords(user_prompt)
         context_plan, _ = workout_service.generate_plan(
             selected_types=keywords["types"],
@@ -56,22 +57,44 @@ def generate_ai_workout():
             selected_muscle_targets=keywords["muscles"]
         )
         
-        exercise_context = ", ".join([ex['name'] for ex in context_plan[:10]]) if context_plan else "general exercises"
+        # Pull more exercises from DB to give the AI a better library (increased to 20)
+        db_list = [ex['name'] for ex in context_plan] if context_plan else []
+        exercise_context = ", ".join(db_list[:20]) if db_list else "General bodyweight and cardio exercises"
 
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
                 {
                     "role": "system", 
-                    "content": f"""You are the Workout Wizard. Use these exercises: {exercise_context}.
-                    Rules: Use '## ' for Day Headers, '### ' for Exercise names, and a SINGLE '*' for details. 
-                    No double bullets."""
+                    "content": f"""You are the 'Workout Wizard'. Create a workout plan.
+                    
+DATABASE EXERCISES (PRIORITIZE THESE):
+{exercise_context}
+
+STRICT FORMATTING RULES:
+1. Use '## ' for Day/Section headers.
+2. Use '### ' for Exercise names.
+3. Beneath each exercise, provide instructions as PLAIN TEXT.
+4. NO BULLET POINTS (no -, *, or •).
+5. NO BOLDING (never use **).
+6. NO LATEX (never use $ or \times). Use 'x' for multiplication (e.g. 3 x 12).
+7. Ensure there is only ONE instruction line per exercise.
+
+EXAMPLE OF CORRECT FORMAT:
+## Day 1: Upper Body
+### Push-ups
+Perform 3 sets of 15 reps with 60 seconds rest.
+### Freestyle Swimming
+Swim 400 meters at a moderate, steady pace."""
                 },
                 {"role": "user", "content": user_prompt}
-            ]
+            ],
+            # Temperature 0.1 makes the AI much more consistent and less 'creative' with formatting
+            temperature=0.1 
         )
         
-        return jsonify({"success": True, "ai_plan": completion.choices[0].message.content})
+        ai_plan = completion.choices[0].message.content
+        return jsonify({"success": True, "ai_plan": ai_plan})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
