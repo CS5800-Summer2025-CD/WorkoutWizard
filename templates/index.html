@@ -250,13 +250,12 @@
             const intensity = document.getElementById('intensitySelect').value;
 
             if (isAiPlan) {
-                // Clean markdown and LaTeX characters
                 const pdfRows = aiMarkdownContent.split('\n')
                     .map(line => {
                         return line
-                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Remove bullets/numbers
-                            .replace(/\$/g, '')                 // Remove LaTeX $ signs
-                            .replace(/\\times/g, 'x')           // Convert \times to x
+                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Remove leading markers
+                            .replace(/[*_#$]/g, '')             // Remove ANY remaining markdown/LaTeX symbols
+                            .replace(/\\times/g, 'x')           // Convert LaTeX times to 'x'
                             .trim();
                     })
                     .filter(l => l.length > 0)
