@@ -61,38 +61,30 @@ def generate_ai_workout():
         db_list = [ex['name'] for ex in context_plan] if context_plan else []
         exercise_context = ", ".join(db_list[:20]) if db_list else "General bodyweight and cardio exercises"
 
+        # In your generate_ai_workout route:
         completion = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
                 {
                     "role": "system", 
-                    "content": f"""You are the 'Workout Wizard'. Create a workout plan.
+                    "content": f"""You are the 'Workout Wizard'. Create a structured workout plan.
                     
-DATABASE EXERCISES (PRIORITIZE THESE):
-{exercise_context}
+        DATABASE EXERCISES (PRIORITIZE THESE):
+        {exercise_context}
 
-STRICT FORMATTING RULES:
-1. Use '## ' for Day/Section headers.
-2. Use '### ' for Exercise names.
-3. Beneath each exercise, provide instructions as PLAIN TEXT.
-4. NO BULLET POINTS (no -, *, or •).
-5. NO BOLDING (never use **).
-6. NO LATEX (never use $ or \times). Use 'x' for multiplication (e.g. 3 x 12).
-7. Ensure there is only ONE instruction line per exercise.
-
-EXAMPLE OF CORRECT FORMAT:
-## Day 1: Upper Body
-### Push-ups
-Perform 3 sets of 15 reps with 60 seconds rest.
-### Freestyle Swimming
-Swim 400 meters at a moderate, steady pace."""
+        STRICT FORMATTING RULES:
+        1. Use '## ' for Day/Section headers (e.g., ## Day 1: Strength).
+        2. Use '### ' for Exercise names (e.g., ### Push-ups).
+        3. Use a single dash '- ' for each instruction/detail line beneath an exercise.
+        4. Leave ONE blank line between exercises for readability.
+        5. NO BOLDING (no **), NO LATEX ($), NO markdown tables.
+        6. Use 'x' for multiplication (e.g., 3 x 12)."""
                 },
                 {"role": "user", "content": user_prompt}
             ],
-            # Temperature 0.1 makes the AI much more consistent and less 'creative' with formatting
-            temperature=0.1 
+            temperature=0.1
         )
-        
+                
         ai_plan = completion.choices[0].message.content
         return jsonify({"success": True, "ai_plan": ai_plan})
     except Exception as e:
