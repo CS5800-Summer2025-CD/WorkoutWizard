@@ -245,20 +245,23 @@
             const btn = document.getElementById('downloadPDFBtn');
             btn.innerText = "Generating...";
             btn.disabled = true;
+            
             let payload;
             const intensity = document.getElementById('intensitySelect').value;
 
             if (isAiPlan) {
-                // FIXED REGEX: Only strips markers like "1. " or "* " or "## ", NOT digits inside words like "400m"
+                // Clean markdown and LaTeX characters
                 const pdfRows = aiMarkdownContent.split('\n')
                     .map(line => {
                         return line
-                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Removes markdown headers, bullets, or list numbers with a space
-                            .replace(/\$/g, '')                 // Removes LaTeX dollar signs
+                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Remove bullets/numbers
+                            .replace(/\$/g, '')                 // Remove LaTeX $ signs
+                            .replace(/\\times/g, 'x')           // Convert \times to x
                             .trim();
                     })
                     .filter(l => l.length > 0)
                     .map(l => ({ name: l, reps: "", sets: "" }));
+                    
                 payload = { workout_plan: { title: "Wizard AI Strategy", exercises: pdfRows } };
             } else {
                 const exercises = lastGeneratedWorkoutPlan.map(ex => ({
@@ -271,7 +274,8 @@
 
             try {
                 const res = await fetch('https://workout-wizard-pdf-gen-bxa2h0awhte0aecc.eastus-01.azurewebsites.net/api/generate_pdf', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
                 const blob = await res.blob();
@@ -279,8 +283,9 @@
                 a.href = URL.createObjectURL(blob);
                 a.download = "Workout_Plan.pdf";
                 a.click();
-            } catch (err) { alert("PDF Error"); }
-            finally {
+            } catch (err) { 
+                alert("PDF Generation Error. Please check if the Azure Function is running."); 
+            } finally {
                 btn.innerText = "Download (.pdf)";
                 btn.disabled = false;
             }
