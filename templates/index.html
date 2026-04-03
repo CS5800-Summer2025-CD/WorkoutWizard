@@ -39,7 +39,7 @@
             font-weight: 600; transition: all 0.3s ease-in-out;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); border: none;
             display: inline-flex; align-items: center; justify-content: center;
-            min-width: 180px; /* Ensures buttons are the same width for alignment */
+            min-width: 180px;
         }
         .button-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); }
         .button-primary:disabled { opacity: 0.7; cursor: not-allowed; }
@@ -53,7 +53,6 @@
 
         .card { background-color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 24px; }
         
-        /* AI DISPLAY FORMATTING */
         .ai-content-area h2 {
             display: block; width: fit-content; background-color: #e0f2fe;
             color: #0369a1; padding: 8px 16px; border-radius: 8px;
@@ -163,7 +162,6 @@
         const downloadActions = document.getElementById('downloadActions');
         const aiBtn = document.getElementById('aiGenerateBtn');
 
-        // CLEAR
         document.getElementById('clearResultsBtn').addEventListener('click', () => {
             workoutListDiv.innerHTML = '<p class="text-center text-gray-400">Your results will appear here.</p>';
             workoutListTitle.innerHTML = '';
@@ -174,15 +172,12 @@
             isAiPlan = false;
         });
 
-        // AI SEARCH
         aiBtn.addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
             if(!prompt) return alert("Please enter a prompt!");
-            
             aiBtn.disabled = true;
             document.getElementById('btnSpinner').classList.remove('hidden');
             document.getElementById('btnText').innerText = "Consulting the Wizard...";
-
             try {
                 const response = await fetch('/generate_ai_workout', {
                     method: 'POST',
@@ -190,47 +185,39 @@
                     body: JSON.stringify({ prompt })
                 });
                 const data = await response.json();
-                
                 if(data.success) {
                     isAiPlan = true;
                     aiMarkdownContent = data.ai_plan;
                     const sanitized = data.ai_plan.replace(/^[\s\-\*•]{2,}/gm, '* ');
-                    
                     workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Wizard\'s Custom Strategy 🧙‍♂️</h2>';
                     workoutListDiv.innerHTML = `<div class="ai-content-area">${marked.parse(sanitized)}</div>`;
                     downloadActions.classList.remove('hidden');
                     downloadActions.classList.add('flex');
                 }
-            } catch (err) {
-                workoutListDiv.innerHTML = '<p class="text-center text-red-500">Error connecting to Wizard.</p>';
-            } finally {
+            } catch (err) { workoutListDiv.innerHTML = '<p class="text-center text-red-500">Error.</p>'; }
+            finally {
                 aiBtn.disabled = false;
                 document.getElementById('btnSpinner').classList.add('hidden');
                 document.getElementById('btnText').innerText = "Generate Smart Workout";
             }
         });
 
-        // DATABASE SEARCH
         document.getElementById('generateWorkoutBtn').addEventListener('click', async () => {
             const types = Array.from(document.querySelectorAll('input[name="exercise_type"]:checked')).map(cb => cb.value);
             const sports = Array.from(document.querySelectorAll('input[name="sport"]:checked')).map(cb => cb.value);
             const muscles = Array.from(document.querySelectorAll('input[name="muscle_target"]:checked')).map(cb => cb.value);
-
-            workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Searching database...</p>';
-            
+            workoutListDiv.innerHTML = '<p class="text-center text-gray-500">Searching...</p>';
             const response = await fetch('/generate_workout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ selected_types: types, selected_sports: sports, selected_muscle_targets: muscles }),
             });
             const data = await response.json();
-            
             if (data.workout_plan && data.workout_plan.length > 0) {
                 isAiPlan = false;
                 lastGeneratedWorkoutPlan = data.workout_plan;
                 workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Database Workout 💪</h2>';
                 workoutListDiv.innerHTML = '';
-                
                 data.workout_plan.forEach(ex => {
                     const card = document.createElement('div');
                     card.className = 'card border border-blue-100 p-6 flex flex-col items-start mb-4 w-full';
@@ -241,12 +228,9 @@
                 });
                 downloadActions.classList.remove('hidden');
                 downloadActions.classList.add('flex');
-            } else {
-                workoutListDiv.innerHTML = '<p class="text-center text-gray-500">No exercises found.</p>';
             }
         });
 
-        // DOWNLOAD LOGIC (TXT & PDF as requested)
         document.getElementById('downloadWorkoutBtn').addEventListener('click', () => {
             let content = "Workout Plan\n\n";
             content += isAiPlan ? aiMarkdownContent : lastGeneratedWorkoutPlan.map(ex => `- ${ex.name}`).join('\n');
@@ -261,16 +245,28 @@
             const btn = document.getElementById('downloadPDFBtn');
             btn.innerText = "Generating...";
             btn.disabled = true;
-
             let payload;
+            const intensity = document.getElementById('intensitySelect').value;
+
             if (isAiPlan) {
+                // FIXED REGEX: Only strips markers like "1. " or "* " or "## ", NOT digits inside words like "400m"
                 const pdfRows = aiMarkdownContent.split('\n')
-                    .map(line => line.replace(/^[#*\-•\s\d+\.]+/, '').trim())
+                    .map(line => {
+                        return line
+                            .replace(/^([#*\-•]|\d+\.)\s+/, '') // Removes markdown headers, bullets, or list numbers with a space
+                            .replace(/\$/g, '')                 // Removes LaTeX dollar signs
+                            .trim();
+                    })
                     .filter(l => l.length > 0)
                     .map(l => ({ name: l, reps: "", sets: "" }));
                 payload = { workout_plan: { title: "Wizard AI Strategy", exercises: pdfRows } };
             } else {
-                payload = { workout_plan: { title: "Database Workout", exercises: lastGeneratedWorkoutPlan } };
+                const exercises = lastGeneratedWorkoutPlan.map(ex => ({
+                    ...ex,
+                    sets: intensity === 'advanced' ? 5 : (intensity === 'beginner' ? 2 : 3),
+                    reps: intensity === 'advanced' ? 15 : (intensity === 'beginner' ? 10 : 12)
+                }));
+                payload = { workout_plan: { title: "Database Workout", exercises } };
             }
 
             try {
