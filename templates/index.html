@@ -218,16 +218,31 @@
                 lastGeneratedWorkoutPlan = data.workout_plan;
                 workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Your Database Workout 💪</h2>';
                 workoutListDiv.innerHTML = '';
+
                 data.workout_plan.forEach(ex => {
                     const card = document.createElement('div');
-                    card.className = 'card border border-blue-100 p-6 flex flex-col items-start mb-4 w-full';
-                    card.innerHTML = `<h3 class="text-xl font-bold text-gray-800 mb-2">${ex.name}</h3>
-                        <p class="text-gray-600 text-sm"><strong>Muscles:</strong> ${ex.muscle_targets?.join(', ') || 'None'}</p>
-                        <a href="${ex.youtube_link}" target="_blank" class="text-blue-500 hover:underline mt-2 text-sm font-semibold italic">Watch Video Demo</a>`;
+                    card.className = 'card border border-blue-100 p-4 flex flex-col items-start mb-4 w-full';
+
+                    // Restored: Types (blue), Sports (green), Muscles (red) pills
+                    const typesHtml = ex.types ? ex.types.map(t => `<span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${t}</span>`).join('') : 'None';
+                    const sportsHtml = ex.sports && ex.sports.length > 0 ? ex.sports.map(s => `<span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${s}</span>`).join('') : '<span class="text-gray-400 italic">None</span>';
+                    const musclesHtml = ex.muscle_targets && ex.muscle_targets.length > 0 ? ex.muscle_targets.map(m => `<span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full capitalize mr-1">${m}</span>`).join('') : '<span class="text-gray-400 italic">None</span>';
+
+                    card.innerHTML = `
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${ex.name}</h3>
+                        <p class="text-gray-600 text-sm mb-1"><strong>Types:</strong> ${typesHtml}</p>
+                        <p class="text-gray-600 text-sm mb-1"><strong>Sports:</strong> ${sportsHtml}</p>
+                        <p class="text-gray-600 text-sm mb-1"><strong>Muscles:</strong> ${musclesHtml}</p>
+                        <p class="text-gray-600 text-sm mb-3"><strong>Equipment:</strong> ${ex.equipment && ex.equipment.length > 0 ? ex.equipment.join(', ') : 'None'}</p>
+                        <a href="${ex.youtube_link}" target="_blank" class="youtube-link flex items-center text-sm">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M19.5 5.25a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v13.5a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3V5.25ZM15.75 12l-4.5 4.5V7.5l4.5 4.5Z" /></svg>
+                            Watch Demo Video
+                        </a>`;
                     workoutListDiv.appendChild(card);
                 });
                 downloadActions.classList.remove('hidden');
-                downloadActions.classList.add('flex');
+            } else {
+                workoutListDiv.innerHTML = '<p class="text-center text-gray-500">No exercises found.</p>';
             }
         });
 
