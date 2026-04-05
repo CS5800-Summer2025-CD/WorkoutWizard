@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from azure.monitor.opentelemetry import configure_azure_monitor
 from services.workout_service import WorkoutService
 from groq import Groq
+import time
 
 # 1. Initialize environment and services
 load_dotenv()
@@ -48,6 +49,9 @@ def generate_ai_workout():
     data = request.json
     user_prompt = data.get('prompt', '')
 
+    # --- 1. START TIMER ---
+    start_time = time.time()
+
     try:
         # Extract keywords to pull relevant exercises from your DB
         keywords = extract_keywords(user_prompt)
@@ -60,6 +64,9 @@ def generate_ai_workout():
         # Pull more exercises from DB to give the AI a better library (increased to 20)
         db_list = [ex['name'] for ex in context_plan] if context_plan else []
         exercise_context = ", ".join(db_list[:20]) if db_list else "General bodyweight and cardio exercises"
+
+        # --- 2. LOG START OF PROCESS ---
+        logger.info(f"AI_START: Prompt length: {len(user_prompt)}")
 
         # In your generate_ai_workout route:
         completion = client.chat.completions.create(
@@ -84,10 +91,25 @@ def generate_ai_workout():
             ],
             temperature=0.1
         )
+
+        # --- 3. CALCULATE SPEED AND SEND SUCCESS TO AZURE ---
+        duration = time.time() - start_time
+        logger.info("AI_Workout_Generated", extra={
+            "custom_dimensions": {
+                "duration_seconds": duration,
+                "prompt_length": len(user_prompt),
+                "db_context_size": len(db_list)
+            }
+        })
                 
         ai_plan = completion.choices[0].message.content
         return jsonify({"success": True, "ai_plan": ai_plan})
     except Exception as e:
+        # --- 4. SEND FAILURE TO AZURE ---
+        logger.error("AI_Workout_Failure", extra={
+            "custom_dimensions": {"error_details": str(e)}
+        })
+        
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/generate_workout', methods=['POST'])
