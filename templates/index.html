@@ -70,6 +70,11 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
+    <script type="text/javascript">
+    !function(T,l,y){var S=T.location,k="script",D="instrumentationKey",C="ingestionendpoint",I="disableExceptionTracking",E="ai.device.",b="toLowerCase",a="crossOrigin",n="POST",t="appInsightsSDK",r=y.name||"appInsights";(y.name||T[t])&&(T[t]=r);var g=T[r]||function(d){var g=!1,f=!1,m={initialize:!0,queue:[],sv:"5",version:2,config:d};function v(e,t){var n={},a="Browser";return n[E+"id"]=a[b](),n[E+"type"]=a,n["ai.operation.name"]=S&&S.pathname||"_unknown_",n["ai.operation.id"]=S&&S.hash||"_unknown_",e[D]&&(n[D]=e[D]),e[C]&&(n[C]=e[C]),n}m.trackEvent=function(e,t,n){m.queue.push({type:0,name:e,properties:t,measurements:n})};m.trackException=function(e,t,n,a,r){m.queue.push({type:5,exception:e,properties:t,measurements:n,severityLevel:a,id:r})};m.trackPageView=function(e,t,n,a,r){m.queue.push({type:3,name:e,properties:t,measurements:n,uri:a,refUri:r})};var e=function(n){return function(){var e=arguments;m.queue.push({type:9,method:n,args:e})}};return m.stopTrackPage=e("stopTrackPage"),m.startTrackPage=e("startTrackPage"),m.stopTrackEvent=e("stopTrackEvent"),m.startTrackEvent=e("startTrackEvent"),m.addTelemetryInitializer=e("addTelemetryInitializer"),m.trackMetric=e("trackMetric"),m.trackTrace=e("trackTrace"),m.trackDependencyData=e("trackDependencyData"),m}({
+      connectionString: "439d8d79-1362-4aff-9e18-9596ec757c45;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=bedb694d-dae6-4f70-ad8f-2f0fa96d07f5"
+    });T[r]=g,g.queue&&0===g.queue.length&&g.trackPageView({})}(window,document,{name:"appInsights"});
+    </script>
 </head>
 <body class="p-6">
     <div class="container mx-auto bg-white p-8 rounded-xl shadow-lg my-8">
@@ -175,6 +180,14 @@
         aiBtn.addEventListener('click', async () => {
             const prompt = document.getElementById('aiPrompt').value;
             if(!prompt) return alert("Please enter a prompt!");
+
+            if (window.appInsights) {
+                window.appInsights.trackEvent({ 
+                    name: 'UserClickedWizard', 
+                    properties: { promptLength: prompt.length } 
+                });
+            }
+
             aiBtn.disabled = true;
             document.getElementById('btnSpinner').classList.remove('hidden');
             document.getElementById('btnText').innerText = "Consulting the Wizard...";
