@@ -2,3 +2,4 @@
 db/*
 migrate_to_cosmos.py
 .env
+cosmosDbUpdate.py
