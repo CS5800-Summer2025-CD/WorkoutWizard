@@ -191,23 +191,70 @@
             aiBtn.disabled = true;
             document.getElementById('btnSpinner').classList.remove('hidden');
             document.getElementById('btnText').innerText = "Consulting the Wizard...";
+            
             try {
                 const response = await fetch('/generate_ai_workout', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify({ prompt: prompt }) 
                 });
+                
                 const data = await response.json();
+                
                 if(data.success) {
                     isAiPlan = true;
-                    aiMarkdownContent = data.ai_plan;
-                    const sanitized = data.ai_plan.replace(/^[\s\-\*•]{2,}/gm, '* ');
-                    workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Wizard\'s Custom Strategy 🧙‍♂️</h2>';
-                    workoutListDiv.innerHTML = `<div class="ai-content-area">${marked.parse(sanitized)}</div>`;
-                    downloadActions.classList.remove('hidden');
-                    downloadActions.classList.add('flex');
+                    let perfectMarkdown = "";
+
+                    try {
+                        // 1. Parse the safe JSON from the backend
+                        const aiData = JSON.parse(data.ai_plan);
+
+                        // 2. Add the Wizard's Intro Note (if it exists)
+                        if (aiData.intro_note) {
+                            perfectMarkdown += `${aiData.intro_note}\n\n`;
+                        }
+
+                        // 3. Build Flawless Markdown for the Days and Exercises
+                        aiData.days.forEach(day => {
+                            perfectMarkdown += `## ${day.day_title}\n\n`; // Day Header
+                            
+                            day.exercises.forEach(ex => {
+                                perfectMarkdown += `### ${ex.exercise_name}\n`; // Exercise Header
+                                perfectMarkdown += `- Target: ${ex.reps_sets}\n`; // Sets/Reps
+                                
+                                ex.instructions.forEach(inst => {
+                                    perfectMarkdown += `- ${inst}\n`; // Bullet points
+                                });
+                                perfectMarkdown += `\n`; // Blank line after each exercise
+                            });
+                        });
+
+                        // 4. Add the Wizard's Outro Note (if it exists)
+                        if (aiData.outro_note) {
+                            perfectMarkdown += `${aiData.outro_note}\n\n`;
+                        }
+
+                        // 5. Save for the Azure PDF Generator
+                        aiMarkdownContent = perfectMarkdown; 
+
+                        // 6. Render using your preferred Format 1 styling
+                        workoutListTitle.innerHTML = '<h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Wizard\'s Custom Strategy 🧙‍♂️</h2>';
+                        workoutListDiv.innerHTML = `<div class="ai-content-area">${marked.parse(perfectMarkdown)}</div>`;
+                        
+                        downloadActions.classList.remove('hidden');
+                        downloadActions.classList.add('flex');
+
+                    } catch (parseError) {
+                        console.error("JSON Parse Error:", parseError);
+                        workoutListDiv.innerHTML = '<p class="text-center text-red-500">The Wizard produced an unreadable format. Please try again.</p>';
+                    }
+                } else {
+                    workoutListDiv.innerHTML = `<p class="text-center text-red-500">Error: ${data.error}</p>`;
                 }
-            } catch (err) { workoutListDiv.innerHTML = '<p class="text-center text-red-500">Error.</p>'; }
+            } catch (err) { 
+                console.error(err);
+                workoutListDiv.innerHTML = '<p class="text-center text-red-500">Connection to the Wizard failed.</p>'; 
+            }
             finally {
                 aiBtn.disabled = false;
                 document.getElementById('btnSpinner').classList.add('hidden');
