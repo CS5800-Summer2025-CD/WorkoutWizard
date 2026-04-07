@@ -47,13 +47,11 @@ def index():
 @app.route('/generate_ai_workout', methods=['POST'])
 def generate_ai_workout():
     data = request.json
-    user_prompt = data.get('prompt', '')
+    user_prompt = data.get('prompt', '') # Match the key from index.html
 
-    # --- 1. START TIMER ---
     start_time = time.time()
 
     try:
-        # Extract keywords to pull relevant exercises from your DB
         keywords = extract_keywords(user_prompt)
         context_plan, _ = workout_service.generate_plan(
             selected_types=keywords["types"],
@@ -61,55 +59,70 @@ def generate_ai_workout():
             selected_muscle_targets=keywords["muscles"]
         )
         
-        # Pull more exercises from DB to give the AI a better library (increased to 20)
         db_list = [ex['name'] for ex in context_plan] if context_plan else []
         exercise_context = ", ".join(db_list[:20]) if db_list else "General bodyweight and cardio exercises"
 
-        # --- 2. LOG START OF PROCESS ---
         logger.info(f"AI_START: Prompt length: {len(user_prompt)}")
 
-        # In your generate_ai_workout route:
+        # Use 3.3-70b or 3.1-8b. Both support JSON mode well.
         completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="llama-3.3-70b-versatile", 
             messages=[
                 {
                     "role": "system", 
-                    "content": f"""You are the 'Workout Wizard'. Create a structured workout plan.
+                    "content": f"""You are the 'Workout Wizard'. You MUST output your response in valid JSON format.
                     
         DATABASE EXERCISES (PRIORITIZE THESE):
         {exercise_context}
 
-        STRICT FORMATTING RULES:
-        1. Use '## ' for Day/Section headers (e.g., ## Day 1: Strength).
-        2. Use '### ' for Exercise names (e.g., ### Push-ups).
-        3. Use a single dash '- ' for each instruction/detail line beneath an exercise.
-        4. Leave ONE blank line between exercises for readability.
-        5. NO BOLDING (no **), NO LATEX ($), NO markdown tables.
-        6. Use 'x' for multiplication (e.g., 3 x 12)."""
+        JSON SCHEMA REQUIREMENT:
+        Return a JSON object with:
+        1. 'intro_note': A helpful, encouraging introductory message or tip (2-3 sentences).
+        2. 'days': An array of days. Each day MUST have at least 5 to 8 exercises. Each day has a 'day_title' and an 'exercises' array.
+        3. Each exercise has an 'exercise_name', 'reps_sets', and an 'instructions' array.
+        4. 'outro_note': A motivational closing message.
+        
+        Example:
+        {{
+            "intro_note": "It sounds like you're feeling a bit drained. Here are a few tips to wake up: stretch and hydrate!",
+            "days": [
+                {{
+                    "day_title": "Day 1: Strength",
+                    "exercises": [
+                        {{
+                            "exercise_name": "Push-ups",
+                            "reps_sets": "3 x 12",
+                            "instructions": ["Keep your back straight.", "Lower until chest touches ground."]
+                        }}
+                    ]
+                }}
+            ],
+            "outro_note": "Remember to listen to your body and rest when needed!"
+        }}"""
                 },
                 {"role": "user", "content": user_prompt}
             ],
+            response_format={"type": "json_object"}, 
             temperature=0.1
         )
 
-        # --- 3. CALCULATE SPEED AND SEND SUCCESS TO AZURE ---
         duration = time.time() - start_time
-        logger.info("AI_Workout_Generated", extra={
-            "custom_dimensions": {
-                "duration_seconds": duration,
-                "prompt_length": len(user_prompt),
-                "db_context_size": len(db_list)
-            }
-        })
-                
-        ai_plan = completion.choices[0].message.content
+        
+        ai_plan = completion.choices[0].message.content.strip()
+        
+        # Safety Net: Strip markdown formatting if the LLM wraps the JSON
+        if ai_plan.startswith("```json"):
+            ai_plan = ai_plan[7:]
+        elif ai_plan.startswith("```"):
+            ai_plan = ai_plan[3:]
+        if ai_plan.endswith("```"):
+            ai_plan = ai_plan[:-3]
+            
+        ai_plan = ai_plan.strip()
+
         return jsonify({"success": True, "ai_plan": ai_plan})
     except Exception as e:
-        # --- 4. SEND FAILURE TO AZURE ---
-        logger.error("AI_Workout_Failure", extra={
-            "custom_dimensions": {"error_details": str(e)}
-        })
-        
+        logger.error("AI_Workout_Failure", extra={"custom_dimensions": {"error_details": str(e)}})
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/generate_workout', methods=['POST'])
