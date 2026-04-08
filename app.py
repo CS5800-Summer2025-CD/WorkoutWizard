@@ -75,6 +75,10 @@ def generate_ai_workout():
         DATABASE EXERCISES (PRIORITIZE THESE):
         {exercise_context}
 
+        CRITICAL SAFETY RULES:
+        1. If the user mentions injury or pain, prioritize 'recovery' or 'stability' exercises.
+        2. If a request is dangerous, advise seeing a doctor.
+
         JSON SCHEMA REQUIREMENT:
         Return a JSON object with:
         1. 'intro_note': A helpful, encouraging introductory message or tip (2-3 sentences).
